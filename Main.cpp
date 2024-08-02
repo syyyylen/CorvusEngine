@@ -1,8 +1,9 @@
 #include <iostream>
+#include "Logger.h"
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello There !" << std::endl;
+    LOG(Debug, "Hello There !");
 
     std::cin.get();
     
