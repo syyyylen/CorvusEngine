@@ -1,2 +1,5 @@
-﻿  CorvusEngine.cpp
+﻿  Logger.cpp
+  Window.cpp
+  Main.cpp
+  Generating Code...
   CorvusEngine.vcxproj -> C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\CorvusEngine.exe

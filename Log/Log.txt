@@ -1,0 +1,4 @@
+[Debug] Hello There !
+[Debug] Starting Corvus Editor
+[Debug] Destroying Corvus Editor
+[Debug] Writing Logs to file
