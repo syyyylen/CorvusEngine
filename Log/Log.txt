@@ -1,4 +1,6 @@
 [Debug] Hello There !
 [Debug] Starting Corvus Editor
+[Debug] Device : Using GPU : NVIDIA GeForce RTX 4060 Ti
+[Debug] Renderer Initialization Completed
 [Debug] Destroying Corvus Editor
 [Debug] Writing Logs to file

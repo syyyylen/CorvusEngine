@@ -2,3 +2,5 @@ C:\Users\jules\Desktop\W\CorvusEngine\Core\Logger.cpp;C:\Users\jules\Desktop\W\C
 C:\Users\jules\Desktop\W\CorvusEngine\Core\Window.cpp;C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\Window.obj
 C:\Users\jules\Desktop\W\CorvusEngine\CorvusEditor.cpp;C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\CorvusEditor.obj
 C:\Users\jules\Desktop\W\CorvusEngine\Main.cpp;C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\Main.obj
+C:\Users\jules\Desktop\W\CorvusEngine\RHI\D3D12Renderer.cpp;C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\D3D12Renderer.obj
+C:\Users\jules\Desktop\W\CorvusEngine\RHI\Device.cpp;C:\Users\jules\Desktop\W\CorvusEngine\x64\Debug\Device.obj

@@ -5,6 +5,8 @@ CorvusEditor::CorvusEditor()
     LOG(Debug, "Starting Corvus Editor");
     
     m_window = std::make_shared<Window>(1280, 720, L"Corvus Editor");
+
+    m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 }
 
 CorvusEditor::~CorvusEditor()

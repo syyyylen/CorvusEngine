@@ -310,12 +310,16 @@
     </ClCompile>
     <ClCompile Include="CorvusEditor.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RHI\D3D12Renderer.cpp" />
+    <ClCompile Include="RHI\Device.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Core.h" />
     <ClInclude Include="Core\Logger.h" />
     <ClInclude Include="Core\Window.h" />
     <ClInclude Include="CorvusEditor.h" />
+    <ClInclude Include="RHI\D3D12Renderer.h" />
+    <ClInclude Include="RHI\Device.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
