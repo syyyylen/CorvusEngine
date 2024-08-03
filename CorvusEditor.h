@@ -13,5 +13,8 @@ public:
 
 private:
     std::shared_ptr<Window> m_window;
-    std::shared_ptr<D3D12Renderer> m_renderer;
+    std::unique_ptr<D3D12Renderer> m_renderer;
+    std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
+    std::shared_ptr<Buffer> m_vertexBuffer;
+    std::shared_ptr<Buffer> m_indicesBuffer;
 };
