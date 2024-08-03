@@ -3,6 +3,8 @@
 DescriptorHeap::DescriptorHeap(std::shared_ptr<Device> device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t size)
     : m_device(device), m_type(type), m_heapSize(size), m_isShaderVisible(false)
 {
+    m_handlesTable = std::vector<bool>(size, false);
+    
     D3D12_DESCRIPTOR_HEAP_DESC desc = {};
     desc.Type = m_type;
     desc.NumDescriptors = m_heapSize;
@@ -24,44 +26,53 @@ DescriptorHeap::DescriptorHeap(std::shared_ptr<Device> device, D3D12_DESCRIPTOR_
     m_incrementSize = m_device->GetDevice()->GetDescriptorHandleIncrementSize(m_type);
 
     LOG(Debug, "DescriptorHeap : allocated a descriptor heap of size : " + std::to_string(size));
-
-    m_freeHandles = std::move(std::make_unique<uint32_t[]>(m_heapSize));
-    m_size = 0;
-
-    for(uint32_t i = 0; i < m_heapSize; i++)
-        m_freeHandles[i] = i;
 }
 
 DescriptorHeap::~DescriptorHeap()
 {
-    m_freeHandles.release();
+    m_handlesTable.clear();
     m_heap->Release();
 }
 
 DescriptorHandle DescriptorHeap::Allocate()
 {
-    uint32_t idx = m_freeHandles[m_size];
-    uint32_t offset = idx * m_incrementSize;
-    m_size++;
-
-    DescriptorHandle handle = {};
-    handle.HeapIdx = idx;
-
-    auto CPUstartPtr = m_heap->GetCPUDescriptorHandleForHeapStart();
-    handle.CPU.ptr = CPUstartPtr.ptr + offset;
-    if(m_isShaderVisible)
+    int index = -1;
+    for(int i = 0; i < m_heapSize; i++)
     {
-        auto GPUstartPtr = m_heap->GetGPUDescriptorHandleForHeapStart();
-        handle.GPU.ptr = GPUstartPtr.ptr + offset;
+        if(m_handlesTable[i] == false)
+        {
+            m_handlesTable[i] = true;
+            index = i;
+            break;
+        }
     }
 
-    return handle;
+    if(index == -1)
+    {
+        LOG(Error, "DescriptorHeap : failed to create descriptor handle !");
+        return DescriptorHandle();
+    }
+
+    DescriptorHandle descriptorHandle = {};
+    descriptorHandle.HeapIdx = index;
+    descriptorHandle.CPU = m_heap->GetCPUDescriptorHandleForHeapStart();
+    descriptorHandle.CPU.ptr += index * m_incrementSize;
+
+    if (m_type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV || m_type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
+    {
+        descriptorHandle.GPU = m_heap->GetGPUDescriptorHandleForHeapStart();
+        descriptorHandle.GPU.ptr += index * m_incrementSize;
+    }
+
+    return descriptorHandle;
 }
 
 void DescriptorHeap::Free(DescriptorHandle& handle)
 {
+    return; // TODO this crashes, to fix
     if(!handle.IsValid())
         return;
 
-    handle = {};
+    m_handlesTable[handle.HeapIdx] = false;
+    handle.CPU.ptr = 0;
 }

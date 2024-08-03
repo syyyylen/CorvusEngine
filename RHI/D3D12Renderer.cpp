@@ -39,7 +39,7 @@ D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
 
 D3D12Renderer::~D3D12Renderer()
 {
-    WaitForPreviousFrame();
+    WaitForGPU();
 
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
@@ -49,23 +49,31 @@ D3D12Renderer::~D3D12Renderer()
 
 void D3D12Renderer::Resize(uint32_t width, uint32_t height)
 {
-    WaitForPreviousFrame();
+    WaitForGPU();
 
     if(m_swapChain)
         m_swapChain->Resize(width, height);
 }
 
-void D3D12Renderer::BeginFrame()
-{
-    m_frameIndex = m_swapChain->AcquireImage();
-    m_directCommandQueue->WaitForFenceValue(m_frameValues[m_frameIndex], 10'000'000);
-
-    m_allocator->GetAllocator()->SetCurrentFrameIndex(m_frameIndex);
-}
-
 void D3D12Renderer::EndFrame()
 {
-    m_frameValues[m_frameIndex] = m_directCommandQueue->GetFenceValue();
+    const UINT64 currentFenceValue = m_frameValues[m_frameIndex];
+    m_directCommandQueue->Signal(m_directCommandQueue->GetFence(), currentFenceValue);
+
+    m_frameIndex = m_swapChain->AcquireImage();
+
+    if (m_directCommandQueue->GetFence()->GetCompletedValue() < m_frameValues[m_frameIndex]) {
+        m_directCommandQueue->WaitForFenceValue(m_frameValues[m_frameIndex], INFINITE);
+    }
+
+    m_frameValues[m_frameIndex] = currentFenceValue + 1;
+}
+
+void D3D12Renderer::WaitForGPU()
+{
+    m_directCommandQueue->Signal(m_directCommandQueue->GetFence(), m_frameValues[m_frameIndex]);
+    m_directCommandQueue->WaitForFenceValue(m_frameValues[m_frameIndex], 10'000'000);
+    m_frameValues[m_frameIndex]++;
 }
 
 void D3D12Renderer::Present(bool vsync)
@@ -96,21 +104,18 @@ void D3D12Renderer::ExecuteCommandBuffers(const std::vector<std::shared_ptr<Comm
     if(type == D3D12_COMMAND_LIST_TYPE_DIRECT)
     {
         m_directCommandQueue->Submit(buffers);
-        m_directCommandQueue->Signal();
         return;
     }
 
     if(type == D3D12_COMMAND_LIST_TYPE_COMPUTE)
     {
         m_computeCommandQueue->Submit(buffers);
-        m_computeCommandQueue->Signal();
         return;
     }
 
     if(type == D3D12_COMMAND_LIST_TYPE_COPY)
     {
         m_copyCommandQueue->Submit(buffers);
-        m_copyCommandQueue->Signal();
         return;
     }
 }
@@ -159,31 +164,7 @@ void D3D12Renderer::FlushUploader(Uploader& uploader)
     }
 
     uploader.m_commandList->End();
-    ExecuteCommandBuffers({ uploader.m_commandList }, D3D12_COMMAND_LIST_TYPE_COPY);
-    WaitForPreviousDeviceSubmit(D3D12_COMMAND_LIST_TYPE_COPY);
+    ExecuteCommandBuffers({ uploader.m_commandList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    WaitForGPU();
     uploader.m_commands.clear();
-}
-
-void D3D12Renderer::WaitForPreviousFrame()
-{
-    uint64_t wait = m_directCommandQueue->Signal();
-    m_directCommandQueue->WaitForFenceValue(wait, 10'000'000);
-}
-
-void D3D12Renderer::WaitForPreviousDeviceSubmit(D3D12_COMMAND_LIST_TYPE type)
-{
-    switch (type) {
-        case D3D12_COMMAND_LIST_TYPE_DIRECT: {
-            m_directCommandQueue->WaitGPUSide();
-            break;
-        }
-        case D3D12_COMMAND_LIST_TYPE_COMPUTE:  {
-            m_computeCommandQueue->WaitGPUSide();
-            break;
-        }
-        case D3D12_COMMAND_LIST_TYPE_COPY: {
-            m_copyCommandQueue->WaitGPUSide();
-            break;
-        }
-    }
 }

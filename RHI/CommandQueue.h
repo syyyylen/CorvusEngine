@@ -10,9 +10,8 @@ public:
     CommandQueue(std::shared_ptr<Device> device, D3D12_COMMAND_LIST_TYPE type);
     ~CommandQueue();
 
-    uint64_t Signal();
+    void Signal(ID3D12Fence* fence, uint64_t value);
     void WaitForFenceValue(uint64_t target, uint64_t timeout);
-    void WaitGPUSide();
     void Submit(const std::vector<std::shared_ptr<CommandList>>& buffers);
 
     ID3D12CommandQueue* GetCommandQueue() { return m_commandQueue; }

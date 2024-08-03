@@ -50,6 +50,8 @@ CorvusEditor::CorvusEditor()
     uploader.CopyHostToDeviceLocal(vertices, sizeof(vertices), m_vertexBuffer);
     uploader.CopyHostToDeviceLocal(indices, sizeof(indices), m_indicesBuffer);
     m_renderer->FlushUploader(uploader);
+
+    m_renderer->WaitForGPU();
 }
 
 CorvusEditor::~CorvusEditor()
@@ -64,8 +66,6 @@ void CorvusEditor::Run()
     {
         uint32_t width, height;
         m_window->GetSize(width, height);
-
-        m_renderer->BeginFrame();
 
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();

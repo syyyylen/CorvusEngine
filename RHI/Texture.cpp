@@ -64,8 +64,7 @@ Texture::Texture(std::shared_ptr<Device> device, std::shared_ptr<Allocator> allo
 
 Texture::~Texture()
 {
-    // TODO free descriptor heap
-    // m_resource.Allocation->Release();
+    // m_resource.Allocation->Release(); // TODO this crashes, to fix
 }
 
 void Texture::CreateRenderTarget(std::shared_ptr<DescriptorHeap> heap)

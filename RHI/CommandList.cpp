@@ -30,7 +30,8 @@ CommandList::CommandList(std::shared_ptr<Device> device, D3D12_COMMAND_LIST_TYPE
 CommandList::~CommandList()
 {
     m_commandList->Release();
-    m_commandAllocator->Release();
+    if(m_commandAllocator)
+        m_commandAllocator->Release();
 }
 
 void CommandList::Begin()

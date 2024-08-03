@@ -26,13 +26,11 @@ public:
 
 private:
     std::shared_ptr<Device> m_device;
-    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
     ID3D12DescriptorHeap* m_heap;
+    D3D12_DESCRIPTOR_HEAP_TYPE m_type;
     bool m_isShaderVisible;
-
     int m_incrementSize;
-    uint32_t m_heapSize;
-    uint32_t m_size;
+    int m_heapSize;
 
-    std::unique_ptr<uint32_t[]> m_freeHandles;
+    std::vector<bool> m_handlesTable;
 };

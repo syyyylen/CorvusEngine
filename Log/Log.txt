@@ -6,37 +6,75 @@
 [Debug] Allocator created !
 [Debug] Swap Chain created !
 [Debug] Renderer Initialization Completed
-[Error] Shader:1:1: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-^
-Shader:1:2: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-    ^
-Shader:1:3: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-        ^
-Shader:1:4: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-            ^
-
-[Debug] Writing Logs to file
-[Debug] ShaderCompiler : compiled : ../../../Shaders/SimpleVertex.hlsl
-[Error] Shader:1:1: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-^
-Shader:1:2: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-    ^
-Shader:1:3: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-        ^
-Shader:1:4: error: source file is not valid UTF-8
-<FD><FD><FD><FD>
-            ^
-
-[Debug] Writing Logs to file
-[Debug] ShaderCompiler : compiled : ../../Shaders/SimplePixel.hlsl
-[Error] GraphicsPipeline : failed to create reflection for shader !
-[Debug] Writing Logs to file
-[Error] Paramètre incorrect.
+[Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
+[Debug] ShaderCompiler : compiled : Shaders/SimplePixel.hlsl
+[Debug] GraphicsPipeline: Created a Graphics Pipeline !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Window resize !
+[Debug] Destroying Corvus Editor
 [Debug] Writing Logs to file

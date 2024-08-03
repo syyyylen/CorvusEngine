@@ -28,11 +28,9 @@ CommandQueue::~CommandQueue()
     m_fence->Release();
 }
 
-uint64_t CommandQueue::Signal()
+void CommandQueue::Signal(ID3D12Fence* fence, uint64_t value)
 {
-    m_fenceValue++;
-    m_commandQueue->Signal(m_fence, m_fenceValue);
-    return m_fenceValue;
+    m_commandQueue->Signal(fence, value);
 }
 
 void CommandQueue::WaitForFenceValue(uint64_t target, uint64_t timeout)
@@ -47,14 +45,10 @@ void CommandQueue::WaitForFenceValue(uint64_t target, uint64_t timeout)
     }
 }
 
-void CommandQueue::WaitGPUSide()
-{
-    m_commandQueue->Wait(m_fence, m_fenceValue);
-}
-
-void CommandQueue::Submit(const std::vector<std::shared_ptr<CommandList>> &buffers)
+void CommandQueue::Submit(const std::vector<std::shared_ptr<CommandList>>& buffers)
 {
     std::vector<ID3D12CommandList*> lists;
+    lists.reserve(buffers.size());
     for (auto& buffer : buffers) {
         lists.push_back(buffer->GetCommandList());
     }

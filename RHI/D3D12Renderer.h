@@ -42,10 +42,7 @@ public:
     Uploader CreateUploader();
 
     void FlushUploader(Uploader& uploader);
-
-private:
-    void WaitForPreviousFrame();
-    void WaitForPreviousDeviceSubmit(D3D12_COMMAND_LIST_TYPE type);
+    void WaitForGPU();
 
 private:
     std::shared_ptr<Device> m_device;
