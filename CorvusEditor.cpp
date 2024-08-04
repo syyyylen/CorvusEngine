@@ -8,6 +8,8 @@
 struct TempCbuf
 {
     float color[4];
+    float time;
+    float padding[3];
 };
 
 CorvusEditor::CorvusEditor()
@@ -59,6 +61,8 @@ CorvusEditor::CorvusEditor()
     m_renderer->FlushUploader(uploader);
 
     m_renderer->WaitForGPU();
+
+    m_startTime = clock();
 }
 
 CorvusEditor::~CorvusEditor()
@@ -71,6 +75,11 @@ void CorvusEditor::Run()
 {
     while(m_window->IsRunning())
     {
+        float time = clock() - m_startTime;
+        float dt = (time - m_lastTime) / 1000.0f;
+        m_lastTime = time;
+        m_elapsedTime += dt;
+        
         uint32_t width, height;
         m_window->GetSize(width, height);
 
@@ -82,6 +91,7 @@ void CorvusEditor::Run()
         cbuf.color[1] = 0.0f;
         cbuf.color[2] = 0.0f;
         cbuf.color[3] = 1.0f;
+        cbuf.time = m_elapsedTime;
         void* data;
         m_constantBuffer->Map(0, 0, &data);
         memcpy(data, &cbuf, sizeof(TempCbuf));

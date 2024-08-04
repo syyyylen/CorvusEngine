@@ -18,4 +18,8 @@ private:
     std::shared_ptr<Buffer> m_vertexBuffer;
     std::shared_ptr<Buffer> m_indicesBuffer;
     std::shared_ptr<Buffer> m_constantBuffer;
+
+    float m_startTime;
+    float m_lastTime;
+    float m_elapsedTime;
 };
