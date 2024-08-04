@@ -23,8 +23,6 @@ CorvusEditor::CorvusEditor()
         m_renderer->Resize(width, height);
     });
 
-    // m_window->Maximize();
-
     m_renderer = std::make_unique<D3D12Renderer>(m_window->GetHandle());
 
     GraphicsPipelineSpecs specs;
@@ -63,6 +61,8 @@ CorvusEditor::CorvusEditor()
     m_renderer->WaitForGPU();
 
     m_startTime = clock();
+
+    m_window->Maximize();
 }
 
 CorvusEditor::~CorvusEditor()

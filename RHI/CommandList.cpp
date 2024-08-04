@@ -69,7 +69,7 @@ void CommandList::ImageBarrier(std::shared_ptr<Texture> texture, D3D12_RESOURCE_
     texture->SetState(state);
 }
 
-void CommandList::BindRenderTargets(const std::vector<std::shared_ptr<Texture>> renderTargets, std::shared_ptr<Texture> depthTarget)
+void CommandList::BindRenderTargets(const std::vector<std::shared_ptr<Texture>>& renderTargets, std::shared_ptr<Texture> depthTarget)
 {
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDescriptors;
     D3D12_CPU_DESCRIPTOR_HANDLE dsvDescriptor;
