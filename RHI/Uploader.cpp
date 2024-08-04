@@ -2,9 +2,9 @@
 
 #include "CommandList.h"
 
-Uploader::Uploader(std::shared_ptr<Device> device, std::shared_ptr<Allocator> allocator) : m_device(device), m_allocator(allocator)
+Uploader::Uploader(std::shared_ptr<Device> device, const Heaps& heaps, std::shared_ptr<Allocator> allocator) : m_device(device), m_allocator(allocator)
 {
-    m_commandList = std::make_shared<CommandList>(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    m_commandList = std::make_shared<CommandList>(device, heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 Uploader::~Uploader()

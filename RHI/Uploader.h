@@ -8,11 +8,12 @@ class Renderer;
 class Buffer;
 class Texture;
 class CommandList;
+struct Heaps;
 
 class Uploader 
 {
 public:
-    Uploader(std::shared_ptr<Device> device, std::shared_ptr<Allocator> allocator);
+    Uploader(std::shared_ptr<Device> device, const Heaps& heaps, std::shared_ptr<Allocator> allocator);
     ~Uploader();
 
     void CopyHostToDeviceShared(void* pData, uint64_t uiSize, std::shared_ptr<Buffer> destBuffer);

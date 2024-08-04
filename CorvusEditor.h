@@ -17,4 +17,5 @@ private:
     std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
     std::shared_ptr<Buffer> m_vertexBuffer;
     std::shared_ptr<Buffer> m_indicesBuffer;
+    std::shared_ptr<Buffer> m_constantBuffer;
 };

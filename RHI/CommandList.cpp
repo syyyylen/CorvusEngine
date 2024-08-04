@@ -1,6 +1,6 @@
 #include "CommandList.h"
 
-CommandList::CommandList(std::shared_ptr<Device> device, D3D12_COMMAND_LIST_TYPE commandQueueType) : m_type(commandQueueType)
+CommandList::CommandList(std::shared_ptr<Device> device, const Heaps& heaps, D3D12_COMMAND_LIST_TYPE commandQueueType) : m_type(commandQueueType), m_heaps(heaps)
 {
     HRESULT hr = device->GetDevice()->CreateCommandAllocator(m_type, IID_PPV_ARGS(&m_commandAllocator));
     if(FAILED(hr))
@@ -38,6 +38,13 @@ void CommandList::Begin()
 {
     m_commandAllocator->Reset();
     m_commandList->Reset(m_commandAllocator, nullptr);
+    if (m_type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+        ID3D12DescriptorHeap* heaps[] = {
+            m_heaps.ShaderHeap->GetHeap() /*,
+            m_heaps.SamplerHeap->GetHeap()*/
+        };
+        m_commandList->SetDescriptorHeaps(1, heaps); // TODO add sampler heap
+    }
 }
 
 void CommandList::End()
@@ -116,6 +123,11 @@ void CommandList::BindVertexBuffer(std::shared_ptr<Buffer> buffer)
 void CommandList::BindIndexBuffer(std::shared_ptr<Buffer> buffer)
 {
     m_commandList->IASetIndexBuffer(&buffer->m_IBV);
+}
+
+void CommandList::BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx)
+{
+    m_commandList->SetGraphicsRootDescriptorTable(idx, buffer->m_descriptorHandle.GPU);
 }
 
 void CommandList::BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline)

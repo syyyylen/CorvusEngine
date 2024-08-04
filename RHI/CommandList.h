@@ -18,7 +18,7 @@ enum class Topology
 class CommandList
 {
 public:
-    CommandList(std::shared_ptr<Device> device, D3D12_COMMAND_LIST_TYPE commandQueueType);
+    CommandList(std::shared_ptr<Device> device, const Heaps& heaps, D3D12_COMMAND_LIST_TYPE commandQueueType);
     ~CommandList();
 
     void Begin();
@@ -31,6 +31,7 @@ public:
     void SetTopology(Topology topology);
     void BindVertexBuffer(std::shared_ptr<Buffer> buffer);
     void BindIndexBuffer(std::shared_ptr<Buffer> buffer);
+    void BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
     void Draw(int vertexCount);
     void DrawIndexed(int indexCount);
@@ -43,4 +44,5 @@ private:
     ID3D12CommandAllocator* m_commandAllocator;
     ID3D12GraphicsCommandList* m_commandList;
     D3D12_COMMAND_LIST_TYPE m_type;
+    Heaps m_heaps;
 };

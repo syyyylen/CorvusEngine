@@ -5,6 +5,11 @@
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
 
+struct TempCbuf
+{
+    float color[4];
+};
+
 CorvusEditor::CorvusEditor()
 {
     LOG(Debug, "Starting Corvus Editor");
@@ -45,7 +50,9 @@ CorvusEditor::CorvusEditor()
 
     m_vertexBuffer = m_renderer->CreateBuffer(sizeof(vertices), sizeof(float) * 3, BufferType::Vertex, false);
     m_indicesBuffer = m_renderer->CreateBuffer(sizeof(indices), sizeof(uint32_t), BufferType::Index, false);
-
+    m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    m_renderer->CreateConstantBuffer(m_constantBuffer);
+    
     Uploader uploader = m_renderer->CreateUploader();
     uploader.CopyHostToDeviceLocal(vertices, sizeof(vertices), m_vertexBuffer);
     uploader.CopyHostToDeviceLocal(indices, sizeof(indices), m_indicesBuffer);
@@ -70,6 +77,16 @@ void CorvusEditor::Run()
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
 
+        TempCbuf cbuf;
+        cbuf.color[0] = 1.0f;
+        cbuf.color[1] = 0.0f;
+        cbuf.color[2] = 0.0f;
+        cbuf.color[3] = 1.0f;
+        void* data;
+        m_constantBuffer->Map(0, 0, &data);
+        memcpy(data, &cbuf, sizeof(TempCbuf));
+        m_constantBuffer->Unmap(0, 0);
+
         commandList->Begin();
         commandList->ImageBarrier(texture, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -80,6 +97,7 @@ void CorvusEditor::Run()
         commandList->BindGraphicsPipeline(m_trianglePipeline);
         commandList->BindVertexBuffer(m_vertexBuffer);
         commandList->BindIndexBuffer(m_indicesBuffer);
+        commandList->BindConstantBuffer(m_constantBuffer, 0);
 
         commandList->ClearRenderTarget(texture, 1.0f, 8.0f, 0.0f, 1.0f);
 

@@ -17,7 +17,7 @@ D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
     LOG(Debug, "Renderer Initialization Completed");
 
     for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-        m_commandBuffers[i] = std::make_shared<CommandList>(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+        m_commandBuffers[i] = std::make_shared<CommandList>(m_device, m_heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
         m_frameValues[i] = 0;
     }
 
@@ -130,9 +130,14 @@ std::shared_ptr<Buffer> D3D12Renderer::CreateBuffer(uint64_t size, uint64_t stri
     return std::make_shared<Buffer>(m_allocator, size, stride, type, readback);
 }
 
+void D3D12Renderer::CreateConstantBuffer(std::shared_ptr<Buffer> buffer)
+{
+    buffer->CreateConstantBuffer(m_device, m_heaps.ShaderHeap);
+}
+
 Uploader D3D12Renderer::CreateUploader()
 {
-    return Uploader(m_device, m_allocator);
+    return Uploader(m_device, m_heaps, m_allocator);
 }
 
 void D3D12Renderer::FlushUploader(Uploader& uploader)

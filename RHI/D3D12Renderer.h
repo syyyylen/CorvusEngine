@@ -10,14 +10,6 @@
 #include "SwapChain.h"
 #include "Uploader.h"
 
-struct Heaps
-{
-    std::shared_ptr<DescriptorHeap> RtvHeap;
-    std::shared_ptr<DescriptorHeap> DsvHeap;
-    std::shared_ptr<DescriptorHeap> ShaderHeap;
-    std::shared_ptr<DescriptorHeap> SamplerHeap;
-};
-
 class D3D12Renderer
 {
 public:
@@ -25,7 +17,6 @@ public:
     ~D3D12Renderer();
 
     void Resize(uint32_t width, uint32_t height);
-    void BeginFrame();
     void EndFrame();
     void Present(bool vsync);
 
@@ -39,6 +30,7 @@ public:
 
     std::shared_ptr<GraphicsPipeline> CreateGraphicsPipeline(GraphicsPipelineSpecs& specs);
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);
+    void CreateConstantBuffer(std::shared_ptr<Buffer> buffer);
     Uploader CreateUploader();
 
     void FlushUploader(Uploader& uploader);

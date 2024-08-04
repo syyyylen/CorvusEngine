@@ -3,6 +3,16 @@
 #include "Device.h"
 #include <Core.h>
 
+class DescriptorHeap;
+
+struct Heaps
+{
+    std::shared_ptr<DescriptorHeap> RtvHeap;
+    std::shared_ptr<DescriptorHeap> DsvHeap;
+    std::shared_ptr<DescriptorHeap> ShaderHeap;
+    std::shared_ptr<DescriptorHeap> SamplerHeap;
+};
+
 struct DescriptorHandle
 {
     D3D12_CPU_DESCRIPTOR_HANDLE CPU;

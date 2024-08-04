@@ -39,6 +39,8 @@ Buffer::Buffer(std::shared_ptr<Allocator> allocator, uint64_t size, uint64_t str
             break;
         }
     }
+
+    m_descriptorHandle = DescriptorHandle();
 }
 
 Buffer::~Buffer()
@@ -99,4 +101,16 @@ void Buffer::Map(int start, int end, void **data)
 
 void Buffer::Unmap(int start, int end)
 {
+    D3D12_RANGE range;
+    range.Begin = start;
+    range.End = end;
+
+    if (range.End > range.Begin)
+    {
+        m_resource.Resource->Unmap(0, &range);
+    }
+    else
+    {
+        m_resource.Resource->Unmap(0, nullptr);
+    }
 }
