@@ -9,21 +9,27 @@ struct TempCbuf
 {
     DirectX::XMFLOAT4X4 worldViewProj;
     float time;
+    float padding[3];
 };
 
 CorvusEditor::CorvusEditor()
 {
     LOG(Debug, "Starting Corvus Editor");
 
-    m_window = std::make_shared<Window>(1280, 720, L"Corvus Editor");
-    m_window->DefineOnResize([this](int width, int height)
+    auto updateProjMatrix = [this](float width, float height)
+    {
+        float aspectRatio = width / height;
+        DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.25f * 3.14159f, aspectRatio, 1.0f, 1000.0f);
+        DirectX::XMStoreFloat4x4(&m_proj, P);
+    };
+
+    m_window = std::make_shared<Window>(1920, 1080, L"Corvus Editor");
+    m_window->DefineOnResize([this, updateProjMatrix](int width, int height)
     {
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
-
-        float aspectRatio = (float)width / (float)height;
-        DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.25f * 3.14159f, aspectRatio, 1.0f, 1000.0f);
-        DirectX::XMStoreFloat4x4(&m_proj, P);
+        
+        updateProjMatrix((float)width, (float)height);
     });
 
     m_renderer = std::make_unique<D3D12Renderer>(m_window->GetHandle());
@@ -39,15 +45,21 @@ CorvusEditor::CorvusEditor()
 
     m_trianglePipeline = m_renderer->CreateGraphicsPipeline(specs);
 
-    std::array<DirectX::XMFLOAT3, 8> vertices = {
-        DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f),
-        DirectX::XMFLOAT3(-1.0f, 1.0f, -1.0f),
-        DirectX::XMFLOAT3(1.0f, 1.0f, -1.0f),
-        DirectX::XMFLOAT3(1.0f, -1.0f, -1.0f),
-        DirectX::XMFLOAT3(-1.0f, -1.0f, 1.0f),
-        DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f),
-        DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f),
-        DirectX::XMFLOAT3(1.0f, -1.0f, 1.0f)
+    struct Vertex
+    {
+        DirectX::XMFLOAT3 pos;
+        DirectX::XMFLOAT4 col;
+    };
+
+    std::array<Vertex, 8> vertices = {
+        Vertex( { DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(-1.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(1.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(-1.0f, -1.0f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) }),
+        Vertex( { DirectX::XMFLOAT3(1.0f, -1.0f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) }),
     };
 
     std::array<uint32_t, 36> indices = {
@@ -70,7 +82,7 @@ CorvusEditor::CorvusEditor()
         4, 3, 7
     };
 
-    m_vertexBuffer = m_renderer->CreateBuffer(sizeof(DirectX::XMFLOAT3) * (UINT)vertices.size(), sizeof(DirectX::XMFLOAT3), BufferType::Vertex, false);
+    m_vertexBuffer = m_renderer->CreateBuffer(sizeof(Vertex) * (UINT)vertices.size(), sizeof(Vertex), BufferType::Vertex, false);
     m_indicesBuffer = m_renderer->CreateBuffer(sizeof(uint32_t) * (UINT)indices.size(), sizeof(uint32_t), BufferType::Index, false);
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
@@ -84,7 +96,11 @@ CorvusEditor::CorvusEditor()
 
     m_startTime = clock();
 
-    m_window->Maximize();
+    // m_window->Maximize();
+
+    uint32_t width, height;
+    m_window->GetSize(width, height);
+    updateProjMatrix((float)width, (float)height);
 }
 
 CorvusEditor::~CorvusEditor()
@@ -114,7 +130,7 @@ void CorvusEditor::Run()
         world.m[2][2] = 1.0f;
         world.m[3][3] = 1.0f;
 
-        DirectX::XMVECTOR pos = DirectX::XMVectorSet(-10.0f, 3.0f, 0.0f, 1.0f);
+        DirectX::XMVECTOR pos = DirectX::XMVectorSet(-10.0f, 5.0f, 0.0f, 1.0f);
         DirectX::XMVECTOR target = DirectX::XMVectorZero();
         DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -149,7 +165,7 @@ void CorvusEditor::Run()
 
         commandList->ClearRenderTarget(texture, 1.0f, 8.0f, 0.0f, 1.0f);
 
-        commandList->DrawIndexed(6);
+        commandList->DrawIndexed(36);
 
         m_renderer->BeginImGuiFrame();
 
