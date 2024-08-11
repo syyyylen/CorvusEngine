@@ -124,13 +124,7 @@ void CorvusEditor::Run()
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
 
-        DirectX::XMFLOAT4X4 world;
-        world.m[0][0] = 1.0f;
-        world.m[1][1] = 1.0f;
-        world.m[2][2] = 1.0f;
-        world.m[3][3] = 1.0f;
-
-        DirectX::XMVECTOR pos = DirectX::XMVectorSet(-10.0f, 5.0f, 0.0f, 1.0f);
+        DirectX::XMVECTOR pos = DirectX::XMVectorSet(m_cam[0], m_cam[1], m_cam[2], 1.0f);
         DirectX::XMVECTOR target = DirectX::XMVectorZero();
         DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -138,9 +132,8 @@ void CorvusEditor::Run()
         DirectX::XMStoreFloat4x4(&m_view, view);
 
         DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&m_proj);
-        DirectX::XMMATRIX wrld = DirectX::XMLoadFloat4x4(&world);
 
-        DirectX::XMMATRIX worldViewProj = wrld * view * proj;
+        DirectX::XMMATRIX worldViewProj = view * proj; // TODO add world mat
 
         TempCbuf cbuf;
         cbuf.time = m_elapsedTime;
@@ -163,7 +156,8 @@ void CorvusEditor::Run()
         commandList->BindIndexBuffer(m_indicesBuffer);
         commandList->BindConstantBuffer(m_constantBuffer, 0);
 
-        commandList->ClearRenderTarget(texture, 1.0f, 8.0f, 0.0f, 1.0f);
+        // commandList->ClearRenderTarget(texture, 1.0f, 8.0f, 0.0f, 1.0f);
+        commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
 
         commandList->DrawIndexed(36);
 
@@ -184,6 +178,10 @@ void CorvusEditor::Run()
 
         ImGui::Begin("FrameRate");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::End();
+        
+        ImGui::Begin("Debug");
+        ImGui::InputFloat3("Camera position", m_cam);
         ImGui::End();
 
         m_renderer->EndImGuiFrame();

@@ -26,4 +26,5 @@ private:
     DirectX::XMFLOAT4X4 m_world;
     DirectX::XMFLOAT4X4 m_view;
     DirectX::XMFLOAT4X4 m_proj;
+    float m_cam[3] = {-10.0f, 5.0f, 0.0f} ;
 };
