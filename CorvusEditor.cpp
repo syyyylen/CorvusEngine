@@ -1,6 +1,8 @@
 ﻿#include "CorvusEditor.h"
 #include "Logger.h"
 #include <ImGui/imgui.h>
+
+#include "InputSystem.h"
 #include "ShaderCompiler.h"
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
@@ -16,6 +18,10 @@ CorvusEditor::CorvusEditor()
 {
     LOG(Debug, "Starting Corvus Editor");
 
+    InputSystem::Create();
+    InputSystem::Get()->AddListener(this);
+    InputSystem::Get()->ShowCursor(false);
+
     auto updateProjMatrix = [this](float width, float height)
     {
         float aspectRatio = width / height;
@@ -23,7 +29,7 @@ CorvusEditor::CorvusEditor()
         DirectX::XMStoreFloat4x4(&m_proj, P);
     };
 
-    m_window = std::make_shared<Window>(1920, 1080, L"Corvus Editor");
+    m_window = std::make_shared<Window>(1380, 960, L"Corvus Editor");
     m_window->DefineOnResize([this, updateProjMatrix](int width, int height)
     {
         LOG(Debug, "Window resize !");
@@ -38,7 +44,7 @@ CorvusEditor::CorvusEditor()
     specs.FormatCount = 1;
     specs.Formats[0] = TextureFormat::RGBA8;
     specs.DepthEnabled = false;
-    specs.Cull = CullMode::Back;
+    specs.Cull = CullMode::Front;
     specs.Fill = FillMode::Solid;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
@@ -96,16 +102,20 @@ CorvusEditor::CorvusEditor()
 
     m_startTime = clock();
 
-    // m_window->Maximize();
-
     uint32_t width, height;
     m_window->GetSize(width, height);
     updateProjMatrix((float)width, (float)height);
+    
+    InputSystem::Get()->SetCursorPosition(Vec2((float)width/2.0f, (float)height/2.0f));
 }
 
 CorvusEditor::~CorvusEditor()
 {
     LOG(Debug, "Destroying Corvus Editor");
+
+    InputSystem::Get()->RemoveListener(this);
+    InputSystem::Release();
+    
     Logger::WriteLogsToFile();
 }
 
@@ -113,6 +123,8 @@ void CorvusEditor::Run()
 {
     while(m_window->IsRunning())
     {
+        InputSystem::Get()->Update();
+        
         float time = clock() - m_startTime;
         float dt = (time - m_lastTime) / 1000.0f;
         m_lastTime = time;
@@ -123,6 +135,11 @@ void CorvusEditor::Run()
 
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
+
+        // TODO free cam
+        
+        m_cam[0] = m_cam[0] + (m_cameraForward * (m_moveSpeed * dt));
+        m_cam[2] = m_cam[2] + (m_cameraRight * (m_moveSpeed * dt));
 
         DirectX::XMVECTOR pos = DirectX::XMVectorSet(m_cam[0], m_cam[1], m_cam[2], 1.0f);
         DirectX::XMVECTOR target = DirectX::XMVectorZero();
@@ -156,7 +173,6 @@ void CorvusEditor::Run()
         commandList->BindIndexBuffer(m_indicesBuffer);
         commandList->BindConstantBuffer(m_constantBuffer, 0);
 
-        // commandList->ClearRenderTarget(texture, 1.0f, 8.0f, 0.0f, 1.0f);
         commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
 
         commandList->DrawIndexed(36);
@@ -190,9 +206,61 @@ void CorvusEditor::Run()
         commandList->End();
         m_renderer->ExecuteCommandBuffers({ commandList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
 
-        m_renderer->Present(true);
+        m_renderer->Present(false);
         m_renderer->EndFrame();
 
         m_window->BroadCast();
     }
+}
+
+void CorvusEditor::OnKeyDown(int key)
+{
+    if(key == 'Z')
+        m_cameraForward = 1.0f;
+    else if(key == 'S')
+        m_cameraForward = -1.0f;
+    else if(key == 'Q')
+        m_cameraRight = -1.0f;
+    else if(key == 'D')
+        m_cameraRight = 1.0f;
+}
+
+void CorvusEditor::OnKeyUp(int key)
+{
+    m_cameraForward = 0.0f;
+    m_cameraRight = 0.0f;
+    
+    if(key == 'E')
+    {
+        m_mouseLocked = m_mouseLocked ? false : true;
+        InputSystem::Get()->ShowCursor(!m_mouseLocked);
+    }
+}
+
+void CorvusEditor::OnMouseMove(const InputListener::Vec2& mousePosition)
+{
+    if(!m_mouseLocked)
+        return;
+
+    // TODO use mouse position to rotate camera
+    
+    uint32_t width, height;
+    m_window->GetSize(width, height);
+    InputSystem::Get()->SetCursorPosition(Vec2(width/2.0f, height/2.0f));
+}
+
+void CorvusEditor::OnLeftMouseDown(const InputListener::Vec2& mousePos)
+{
+}
+
+void CorvusEditor::OnRightMouseDown(const InputListener::Vec2& mousePos)
+{
+}
+
+void CorvusEditor::OnLeftMouseUp(const InputListener::Vec2& mousePos)
+{
+}
+
+void CorvusEditor::OnRightMouseUp(const InputListener::Vec2& mousePos)
+{
 }
