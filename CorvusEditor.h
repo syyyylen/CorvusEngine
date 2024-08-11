@@ -22,4 +22,8 @@ private:
     float m_startTime;
     float m_lastTime;
     float m_elapsedTime;
+
+    DirectX::XMFLOAT4X4 m_world;
+    DirectX::XMFLOAT4X4 m_view;
+    DirectX::XMFLOAT4X4 m_proj;
 };

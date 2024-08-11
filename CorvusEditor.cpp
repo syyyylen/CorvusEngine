@@ -7,9 +7,8 @@
 
 struct TempCbuf
 {
-    float color[4];
+    DirectX::XMFLOAT4X4 worldViewProj;
     float time;
-    float padding[3];
 };
 
 CorvusEditor::CorvusEditor()
@@ -21,6 +20,10 @@ CorvusEditor::CorvusEditor()
     {
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
+
+        float aspectRatio = (float)width / (float)height;
+        DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.25f * 3.14159f, aspectRatio, 1.0f, 1000.0f);
+        DirectX::XMStoreFloat4x4(&m_proj, P);
     });
 
     m_renderer = std::make_unique<D3D12Renderer>(m_window->GetHandle());
@@ -29,33 +32,52 @@ CorvusEditor::CorvusEditor()
     specs.FormatCount = 1;
     specs.Formats[0] = TextureFormat::RGBA8;
     specs.DepthEnabled = false;
-    specs.Cull = CullMode::None;
+    specs.Cull = CullMode::Back;
     specs.Fill = FillMode::Solid;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_trianglePipeline = m_renderer->CreateGraphicsPipeline(specs);
 
-    float vertices[] = {
-        0.5f,  0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-       -0.5f, -0.5f, 0.0f,
-       -0.5f,  0.5f, 0.0f
-   };
-
-    uint32_t indices[] = {
-        0, 1, 3,
-        1, 2, 3
+    std::array<DirectX::XMFLOAT3, 8> vertices = {
+        DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f),
+        DirectX::XMFLOAT3(-1.0f, 1.0f, -1.0f),
+        DirectX::XMFLOAT3(1.0f, 1.0f, -1.0f),
+        DirectX::XMFLOAT3(1.0f, -1.0f, -1.0f),
+        DirectX::XMFLOAT3(-1.0f, -1.0f, 1.0f),
+        DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f),
+        DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f),
+        DirectX::XMFLOAT3(1.0f, -1.0f, 1.0f)
     };
 
-    m_vertexBuffer = m_renderer->CreateBuffer(sizeof(vertices), sizeof(float) * 3, BufferType::Vertex, false);
-    m_indicesBuffer = m_renderer->CreateBuffer(sizeof(indices), sizeof(uint32_t), BufferType::Index, false);
+    std::array<uint32_t, 36> indices = {
+        0, 1, 2,
+        0, 2, 3,
+
+        4, 6, 5,
+        4, 7, 6,
+
+        4, 5, 1,
+        4, 1, 0,
+
+        3, 2, 6,
+        3, 6, 7,
+
+        1, 5, 6,
+        1, 6, 2,
+
+        4, 0, 3,
+        4, 3, 7
+    };
+
+    m_vertexBuffer = m_renderer->CreateBuffer(sizeof(DirectX::XMFLOAT3) * (UINT)vertices.size(), sizeof(DirectX::XMFLOAT3), BufferType::Vertex, false);
+    m_indicesBuffer = m_renderer->CreateBuffer(sizeof(uint32_t) * (UINT)indices.size(), sizeof(uint32_t), BufferType::Index, false);
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
     
     Uploader uploader = m_renderer->CreateUploader();
-    uploader.CopyHostToDeviceLocal(vertices, sizeof(vertices), m_vertexBuffer);
-    uploader.CopyHostToDeviceLocal(indices, sizeof(indices), m_indicesBuffer);
+    uploader.CopyHostToDeviceLocal(vertices.data(), sizeof(vertices), m_vertexBuffer);
+    uploader.CopyHostToDeviceLocal(indices.data(), sizeof(indices), m_indicesBuffer);
     m_renderer->FlushUploader(uploader);
 
     m_renderer->WaitForGPU();
@@ -86,12 +108,28 @@ void CorvusEditor::Run()
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
 
+        DirectX::XMFLOAT4X4 world;
+        world.m[0][0] = 1.0f;
+        world.m[1][1] = 1.0f;
+        world.m[2][2] = 1.0f;
+        world.m[3][3] = 1.0f;
+
+        DirectX::XMVECTOR pos = DirectX::XMVectorSet(-10.0f, 3.0f, 0.0f, 1.0f);
+        DirectX::XMVECTOR target = DirectX::XMVectorZero();
+        DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+        DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(pos, target, up);
+        DirectX::XMStoreFloat4x4(&m_view, view);
+
+        DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&m_proj);
+        DirectX::XMMATRIX wrld = DirectX::XMLoadFloat4x4(&world);
+
+        DirectX::XMMATRIX worldViewProj = wrld * view * proj;
+
         TempCbuf cbuf;
-        cbuf.color[0] = 1.0f;
-        cbuf.color[1] = 0.0f;
-        cbuf.color[2] = 0.0f;
-        cbuf.color[3] = 1.0f;
         cbuf.time = m_elapsedTime;
+        DirectX::XMStoreFloat4x4(&cbuf.worldViewProj, DirectX::XMMatrixTranspose(worldViewProj));
+        
         void* data;
         m_constantBuffer->Map(0, 0, &data);
         memcpy(data, &cbuf, sizeof(TempCbuf));
