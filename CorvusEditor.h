@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "Core.h"
 #include "InputListener.h"
+#include "RenderItem.h"
 #include "Window.h"
 #include "RHI/D3D12Renderer.h"
 
@@ -27,8 +28,6 @@ private:
     std::shared_ptr<Window> m_window;
     std::unique_ptr<D3D12Renderer> m_renderer;
     std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
-    std::shared_ptr<Buffer> m_vertexBuffer;
-    std::shared_ptr<Buffer> m_indicesBuffer;
     std::shared_ptr<Buffer> m_constantBuffer;
 
     float m_startTime;
@@ -44,4 +43,6 @@ private:
     float m_previousFov = m_fov;
     float m_moveSpeed = 3.5f;
     bool m_mouseLocked = true;
+
+    std::vector<std::shared_ptr<RenderItem>> m_renderItems;
 };

@@ -87,14 +87,20 @@ CorvusEditor::CorvusEditor()
         4, 3, 7
     };
 
-    m_vertexBuffer = m_renderer->CreateBuffer(sizeof(Vertex) * (UINT)vertices.size(), sizeof(Vertex), BufferType::Vertex, false);
-    m_indicesBuffer = m_renderer->CreateBuffer(sizeof(uint32_t) * (UINT)indices.size(), sizeof(uint32_t), BufferType::Index, false);
+    auto cubeRenderItem = std::make_shared<RenderItem>();
+    cubeRenderItem->m_primitives.emplace_back(Primitive());
+    m_renderItems.emplace_back(cubeRenderItem);
+    
+    cubeRenderItem->m_primitives[0].m_vertexBuffer = m_renderer->CreateBuffer(sizeof(Vertex) * (UINT)vertices.size(), sizeof(Vertex), BufferType::Vertex, false);
+    cubeRenderItem->m_primitives[0].m_indicesBuffer = m_renderer->CreateBuffer(sizeof(uint32_t) * (UINT)indices.size(), sizeof(uint32_t), BufferType::Index, false);
+    cubeRenderItem->m_primitives[0].m_vertexCount = vertices.size();
+    cubeRenderItem->m_primitives[0].m_indexCount = indices.size();
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
     
     Uploader uploader = m_renderer->CreateUploader();
-    uploader.CopyHostToDeviceLocal(vertices.data(), sizeof(vertices), m_vertexBuffer);
-    uploader.CopyHostToDeviceLocal(indices.data(), sizeof(indices), m_indicesBuffer);
+    uploader.CopyHostToDeviceLocal(vertices.data(), sizeof(vertices), cubeRenderItem->m_primitives[0].m_vertexBuffer);
+    uploader.CopyHostToDeviceLocal(indices.data(), sizeof(indices), cubeRenderItem->m_primitives[0].m_indicesBuffer);
     m_renderer->FlushUploader(uploader);
 
     m_renderer->WaitForGPU();
@@ -144,7 +150,6 @@ void CorvusEditor::Run()
         {
             m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, (float)width / (float)height);
             m_previousFov = m_fov;
-            
         }
 
         m_camera.Walk(m_cameraForward * (m_moveSpeed * dt));
@@ -173,14 +178,21 @@ void CorvusEditor::Run()
         commandList->SetTopology(Topology::TriangleList);
 
         commandList->BindRenderTargets({ texture }, nullptr);
+        commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
+        
         commandList->BindGraphicsPipeline(m_trianglePipeline);
-        commandList->BindVertexBuffer(m_vertexBuffer);
-        commandList->BindIndexBuffer(m_indicesBuffer);
+        
         commandList->BindConstantBuffer(m_constantBuffer, 0);
 
-        commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
-
-        commandList->DrawIndexed(36);
+        for(const auto renderItem : m_renderItems)
+        {
+            for(const auto& primitive : renderItem->m_primitives)
+            {
+                commandList->BindVertexBuffer(primitive.m_vertexBuffer);
+                commandList->BindIndexBuffer(primitive.m_indicesBuffer);
+                commandList->DrawIndexed(primitive.m_indexCount);
+            }
+        }
 
         m_renderer->BeginImGuiFrame();
 
