@@ -33,17 +33,25 @@ CorvusEditor::CorvusEditor()
     {
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
+        m_depthBuffer.reset();
+        m_depthBuffer = m_renderer->CreateTexture(1380, 960, TextureFormat::R32Depth, TextureType::DepthTarget);
+        m_renderer->CreateDepthView(m_depthBuffer);
         
         updateProjMatrix((float)width, (float)height);
     });
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
+    m_depthBuffer = m_renderer->CreateTexture(1380, 960, TextureFormat::R32Depth, TextureType::DepthTarget);
+    m_renderer->CreateDepthView(m_depthBuffer);
+
     GraphicsPipelineSpecs specs;
     specs.FormatCount = 1;
     specs.Formats[0] = TextureFormat::RGBA8;
-    specs.DepthEnabled = false;
-    specs.Cull = CullMode::Front;
+    specs.DepthEnabled = true;
+    specs.Depth = DepthOperation::Less;
+    specs.DepthFormat = TextureFormat::R32Depth;
+    specs.Cull = CullMode::None;
     specs.Fill = FillMode::Solid;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
@@ -128,8 +136,9 @@ void CorvusEditor::Run()
         commandList->SetViewport(0, 0, width, height);
         commandList->SetTopology(Topology::TriangleList);
 
-        commandList->BindRenderTargets({ texture }, nullptr);
+        commandList->BindRenderTargets({ texture }, m_depthBuffer);
         commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
+        commandList->ClearDepthTarget(m_depthBuffer);
         
         commandList->BindGraphicsPipeline(m_trianglePipeline);
         

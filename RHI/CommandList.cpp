@@ -90,6 +90,11 @@ void CommandList::ClearRenderTarget(std::shared_ptr<Texture> renderTarget, float
     m_commandList->ClearRenderTargetView(renderTarget->m_rtv.CPU, clearValues, 0, nullptr);
 }
 
+void CommandList::ClearDepthTarget(std::shared_ptr<Texture> depthTarget)
+{
+    m_commandList->ClearDepthStencilView(depthTarget->m_dsv.CPU, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+}
+
 void CommandList::SetViewport(float x, float y, float width, float height)
 {
     D3D12_VIEWPORT Viewport = {};

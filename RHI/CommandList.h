@@ -27,6 +27,7 @@ public:
     void ImageBarrier(std::shared_ptr<Texture> texture, D3D12_RESOURCE_STATES state);
     void BindRenderTargets(const std::vector<std::shared_ptr<Texture>>& renderTargets, std::shared_ptr<Texture> depthTarget);
     void ClearRenderTarget(std::shared_ptr<Texture> renderTarget, float r, float g, float b, float a);
+    void ClearDepthTarget(std::shared_ptr<Texture> depthTarget);
     void SetViewport(float x, float y, float width, float height);
     void SetTopology(Topology topology);
     void BindVertexBuffer(std::shared_ptr<Buffer> buffer);

@@ -3,6 +3,7 @@
 [Debug] Device : Using GPU : NVIDIA GeForce RTX 4060 Ti
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 512
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 2048
+[Debug] DescriptorHeap : allocated a descriptor heap of size : 1024
 [Debug] Allocator created !
 [Debug] Swap Chain created !
 [Debug] Renderer Initialization Completed

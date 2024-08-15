@@ -31,7 +31,9 @@ public:
     std::shared_ptr<GraphicsPipeline> CreateGraphicsPipeline(GraphicsPipelineSpecs& specs);
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);
     void CreateConstantBuffer(std::shared_ptr<Buffer> buffer);
+    void CreateDepthView(std::shared_ptr<Texture> texture);
     Uploader CreateUploader();
+    std::shared_ptr<Texture> CreateTexture(int width, int height, TextureFormat format, TextureType type);
 
     void FlushUploader(Uploader& uploader);
     void WaitForGPU();
