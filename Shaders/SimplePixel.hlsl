@@ -8,8 +8,8 @@ struct PixelIn
 
 float4 Main(PixelIn Input) : SV_TARGET
 {
-    return float4(Input.uv, 0.0f, 0.0f);
-    // return float4(Input.normal, 1.0f);
+    // return float4(Input.uv, 0.0f, 0.0f);
+    return float4(Input.normal, 1.0f);
     
     // safety Yellow
     return float4(255.0f, 240.0f, 0.0f, 1.0f);

@@ -34,7 +34,7 @@ CorvusEditor::CorvusEditor()
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
         m_depthBuffer.reset();
-        m_depthBuffer = m_renderer->CreateTexture(1380, 960, TextureFormat::R32Depth, TextureType::DepthTarget);
+        m_depthBuffer = m_renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
         m_renderer->CreateDepthView(m_depthBuffer);
         
         updateProjMatrix((float)width, (float)height);
@@ -61,7 +61,7 @@ CorvusEditor::CorvusEditor()
     m_renderer->CreateConstantBuffer(m_constantBuffer);
 
     auto model = std::make_shared<RenderItem>();
-    model->ImportMesh(m_renderer, "Assets/teapot.obj");
+    model->ImportMesh(m_renderer, "Assets/dragon.obj");
     m_renderItems.push_back(model);
     
     m_startTime = clock();
@@ -175,7 +175,7 @@ void CorvusEditor::Run()
 
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
-        ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 10.0f);
+        ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
         ImGui::End();
         
         m_renderer->EndImGuiFrame();

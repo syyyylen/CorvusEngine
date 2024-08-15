@@ -42,7 +42,7 @@ private:
 
     float m_fov = 0.35f;
     float m_previousFov = m_fov;
-    float m_moveSpeed = 3.5f;
+    float m_moveSpeed = 4.5f;
     bool m_mouseLocked = true;
 
     std::vector<std::shared_ptr<RenderItem>> m_renderItems;

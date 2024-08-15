@@ -30,8 +30,8 @@ CommandList::CommandList(std::shared_ptr<Device> device, const Heaps& heaps, D3D
 CommandList::~CommandList()
 {
     m_commandList->Release();
-    if(m_commandAllocator)
-        m_commandAllocator->Release();
+    // if(m_commandAllocator) // TODO find out why it crashed & put it back
+    //     m_commandAllocator->Release();
 }
 
 void CommandList::Begin()
