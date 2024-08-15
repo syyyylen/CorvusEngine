@@ -10,9 +10,9 @@ Camera::~Camera()
 {
 }
 
-void Camera::UpdatePerspectiveFOV(float aspectRatio)
+void Camera::UpdatePerspectiveFOV(float FovY, float aspectRatio)
 {
-    XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * 3.14159f, aspectRatio, 1.0f, 1000.0f);
+    XMMATRIX P = XMMatrixPerspectiveFovLH(FovY, aspectRatio, 1.0f, 1000.0f);
     XMStoreFloat4x4(&m_proj, P);
 }
 

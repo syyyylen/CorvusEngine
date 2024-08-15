@@ -39,7 +39,9 @@ private:
     float m_cameraForward;
     float m_cameraRight;
     float m_lastMousePos[2];
-    
-    float m_moveSpeed = 2.5f;
+
+    float m_fov = 0.35f;
+    float m_previousFov = m_fov;
+    float m_moveSpeed = 3.5f;
     bool m_mouseLocked = true;
 };

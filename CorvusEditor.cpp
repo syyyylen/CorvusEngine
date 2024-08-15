@@ -25,7 +25,7 @@ CorvusEditor::CorvusEditor()
     auto updateProjMatrix = [this](float width, float height)
     {
         float aspectRatio = width / height;
-        m_camera.UpdatePerspectiveFOV(aspectRatio);
+        m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, aspectRatio);
     };
 
     m_window = std::make_shared<Window>(1380, 960, L"Corvus Editor");
@@ -108,6 +108,9 @@ CorvusEditor::CorvusEditor()
     updateProjMatrix((float)width, (float)height);
     
     InputSystem::Get()->SetCursorPosition(Vec2((float)width/2.0f, (float)height/2.0f));
+
+    m_lastMousePos[0] = width/2.0f;
+    m_lastMousePos[1] = height/2.0f;
 }
 
 CorvusEditor::~CorvusEditor()
@@ -136,6 +139,13 @@ void CorvusEditor::Run()
 
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
+
+        if(m_fov != m_previousFov)
+        {
+            m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, (float)width / (float)height);
+            m_previousFov = m_fov;
+            
+        }
 
         m_camera.Walk(m_cameraForward * (m_moveSpeed * dt));
         m_camera.Strafe(m_cameraRight * (m_moveSpeed * dt));
@@ -190,6 +200,11 @@ void CorvusEditor::Run()
         ImGui::Begin("FrameRate");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
+
+        ImGui::Begin("Debug");
+        ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
+        ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 10.0f);
+        ImGui::End();
         
         m_renderer->EndImGuiFrame();
 
@@ -228,6 +243,8 @@ void CorvusEditor::OnKeyUp(int key)
         uint32_t width, height;
         m_window->GetSize(width, height);
         InputSystem::Get()->SetCursorPosition(Vec2(width/2.0f, height/2.0f));
+        m_lastMousePos[0] = width/2.0f;
+        m_lastMousePos[1] = height/2.0f;
     }
 }
 
@@ -240,7 +257,7 @@ void CorvusEditor::OnMouseMove(const InputListener::Vec2& mousePosition)
     float dy = DirectX::XMConvertToRadians(0.25f * (mousePosition.Y - m_lastMousePos[1]));
 
     m_camera.Pitch(dy);
-    m_camera.RotateY(-dx);
+    m_camera.RotateY(dx);
     
     m_lastMousePos[0] = mousePosition.X;
     m_lastMousePos[1] = mousePosition.Y;
