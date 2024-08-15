@@ -5,22 +5,29 @@ cbuffer CBuf : register(b0)
     float3 padding;
 };
 
+/*
 struct VertexIn
 {
     float3 Position : POSITION;
     float4 Color : COLOR;
 };
+*/
+
+struct VertexIn
+{
+    float3 Position : POSITION;
+    float2 TexCoords : TEXCOORD;
+    float3 Normal : NORMAL;
+};
 
 struct VertexOut
 {
     float4 Position : SV_POSITION;
-    float4 Color : COLOR;
 };
 
 VertexOut Main(VertexIn Input)
 {
     VertexOut Output;
     Output.Position = mul(float4(Input.Position, 1.0), WorldViewProj);
-    Output.Color = Input.Color;
     return Output;
 }

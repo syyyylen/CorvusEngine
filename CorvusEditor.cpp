@@ -37,7 +37,7 @@ CorvusEditor::CorvusEditor()
         updateProjMatrix((float)width, (float)height);
     });
 
-    m_renderer = std::make_unique<D3D12Renderer>(m_window->GetHandle());
+    m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
     GraphicsPipelineSpecs specs;
     specs.FormatCount = 1;
@@ -49,62 +49,13 @@ CorvusEditor::CorvusEditor()
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_trianglePipeline = m_renderer->CreateGraphicsPipeline(specs);
-
-    struct Vertex
-    {
-        DirectX::XMFLOAT3 pos;
-        DirectX::XMFLOAT4 col;
-    };
-
-    std::array<Vertex, 8> vertices = {
-        Vertex( { DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(-1.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(1.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(1.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(-1.0f, -1.0f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(-1.0f, 1.0f, 1.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) }),
-        Vertex( { DirectX::XMFLOAT3(1.0f, -1.0f, 1.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) }),
-    };
-
-    std::array<uint32_t, 36> indices = {
-        0, 1, 2,
-        0, 2, 3,
-
-        4, 6, 5,
-        4, 7, 6,
-
-        4, 5, 1,
-        4, 1, 0,
-
-        3, 2, 6,
-        3, 6, 7,
-
-        1, 5, 6,
-        1, 6, 2,
-
-        4, 0, 3,
-        4, 3, 7
-    };
-
-    auto cubeRenderItem = std::make_shared<RenderItem>();
-    cubeRenderItem->m_primitives.emplace_back(Primitive());
-    m_renderItems.emplace_back(cubeRenderItem);
-    
-    cubeRenderItem->m_primitives[0].m_vertexBuffer = m_renderer->CreateBuffer(sizeof(Vertex) * (UINT)vertices.size(), sizeof(Vertex), BufferType::Vertex, false);
-    cubeRenderItem->m_primitives[0].m_indicesBuffer = m_renderer->CreateBuffer(sizeof(uint32_t) * (UINT)indices.size(), sizeof(uint32_t), BufferType::Index, false);
-    cubeRenderItem->m_primitives[0].m_vertexCount = vertices.size();
-    cubeRenderItem->m_primitives[0].m_indexCount = indices.size();
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
+
+    auto model = std::make_shared<RenderItem>();
+    model->ImportMesh(m_renderer, "Assets/teapot.obj");
+    m_renderItems.push_back(model);
     
-    Uploader uploader = m_renderer->CreateUploader();
-    uploader.CopyHostToDeviceLocal(vertices.data(), sizeof(vertices), cubeRenderItem->m_primitives[0].m_vertexBuffer);
-    uploader.CopyHostToDeviceLocal(indices.data(), sizeof(indices), cubeRenderItem->m_primitives[0].m_indicesBuffer);
-    m_renderer->FlushUploader(uploader);
-
-    m_renderer->WaitForGPU();
-
     m_startTime = clock();
 
     // m_window->Maximize();

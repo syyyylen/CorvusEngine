@@ -18,6 +18,7 @@ void RenderItem::ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string
     }
     
     ProcessNode(renderer, scene->mRootNode, scene);
+    LOG(Debug, "Imported mesh");
 }
 
 void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh* mesh, const aiScene* scene)
@@ -66,8 +67,12 @@ void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMes
 
 void RenderItem::ProcessNode(std::shared_ptr<D3D12Renderer> renderer, aiNode* node, const aiScene* scene)
 {
-    for (int i = 0; i < node->mNumMeshes; i++) {
+    for (int i = 0; i < node->mNumMeshes; i++)
+    {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]]; // TODO compute transform
         ProcessPrimitive(renderer, mesh, scene);
     }
+
+    for (int i = 0; i < node->mNumChildren; i++)
+        ProcessNode(renderer, node->mChildren[i], scene);
 }
