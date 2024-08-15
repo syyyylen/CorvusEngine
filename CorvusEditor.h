@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Camera.h"
 #include "Core.h"
 #include "InputListener.h"
 #include "Window.h"
@@ -34,13 +35,11 @@ private:
     float m_lastTime;
     float m_elapsedTime;
 
-    DirectX::XMFLOAT4X4 m_world;
-    DirectX::XMFLOAT4X4 m_view;
-    DirectX::XMFLOAT4X4 m_proj;
-    float m_cam[3] = {-10.0f, 5.0f, 4.0f} ;
-
-    float m_moveSpeed = 2.5f;
-    bool m_mouseLocked = true;
+    Camera m_camera;
     float m_cameraForward;
     float m_cameraRight;
+    float m_lastMousePos[2];
+    
+    float m_moveSpeed = 2.5f;
+    bool m_mouseLocked = true;
 };

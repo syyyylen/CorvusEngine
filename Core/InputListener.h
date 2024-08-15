@@ -5,6 +5,7 @@ class InputListener
 public:
     struct Vec2
     {
+        Vec2();
         Vec2(float _x, float _y) : X(_x), Y(_y) {}
         float X, Y;
     };

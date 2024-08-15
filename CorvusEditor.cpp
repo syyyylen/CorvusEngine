@@ -25,8 +25,7 @@ CorvusEditor::CorvusEditor()
     auto updateProjMatrix = [this](float width, float height)
     {
         float aspectRatio = width / height;
-        DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(0.25f * 3.14159f, aspectRatio, 1.0f, 1000.0f);
-        DirectX::XMStoreFloat4x4(&m_proj, P);
+        m_camera.UpdatePerspectiveFOV(aspectRatio);
     };
 
     m_window = std::make_shared<Window>(1380, 960, L"Corvus Editor");
@@ -102,6 +101,8 @@ CorvusEditor::CorvusEditor()
 
     m_startTime = clock();
 
+    // m_window->Maximize();
+
     uint32_t width, height;
     m_window->GetSize(width, height);
     updateProjMatrix((float)width, (float)height);
@@ -136,19 +137,13 @@ void CorvusEditor::Run()
         auto commandList = m_renderer->GetCurrentCommandList();
         auto texture = m_renderer->GetBackBuffer();
 
-        // TODO free cam
-        
-        m_cam[0] = m_cam[0] + (m_cameraForward * (m_moveSpeed * dt));
-        m_cam[2] = m_cam[2] + (m_cameraRight * (m_moveSpeed * dt));
+        m_camera.Walk(m_cameraForward * (m_moveSpeed * dt));
+        m_camera.Strafe(m_cameraRight * (m_moveSpeed * dt));
 
-        DirectX::XMVECTOR pos = DirectX::XMVectorSet(m_cam[0], m_cam[1], m_cam[2], 1.0f);
-        DirectX::XMVECTOR target = DirectX::XMVectorZero();
-        DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        m_camera.UpdateViewMatrix();
 
-        DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(pos, target, up);
-        DirectX::XMStoreFloat4x4(&m_view, view);
-
-        DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&m_proj);
+        auto view = m_camera.GetViewMatrix();
+        auto proj = m_camera.GetProjMatrix();
 
         DirectX::XMMATRIX worldViewProj = view * proj; // TODO add world mat
 
@@ -196,10 +191,6 @@ void CorvusEditor::Run()
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
         
-        ImGui::Begin("Debug");
-        ImGui::InputFloat3("Camera position", m_cam);
-        ImGui::End();
-
         m_renderer->EndImGuiFrame();
 
         commandList->ImageBarrier(texture, D3D12_RESOURCE_STATE_PRESENT);
@@ -234,6 +225,9 @@ void CorvusEditor::OnKeyUp(int key)
     {
         m_mouseLocked = m_mouseLocked ? false : true;
         InputSystem::Get()->ShowCursor(!m_mouseLocked);
+        uint32_t width, height;
+        m_window->GetSize(width, height);
+        InputSystem::Get()->SetCursorPosition(Vec2(width/2.0f, height/2.0f));
     }
 }
 
@@ -242,11 +236,14 @@ void CorvusEditor::OnMouseMove(const InputListener::Vec2& mousePosition)
     if(!m_mouseLocked)
         return;
 
-    // TODO use mouse position to rotate camera
+    float dx = DirectX::XMConvertToRadians(0.25f * (mousePosition.X - m_lastMousePos[0]));
+    float dy = DirectX::XMConvertToRadians(0.25f * (mousePosition.Y - m_lastMousePos[1]));
+
+    m_camera.Pitch(dy);
+    m_camera.RotateY(-dx);
     
-    uint32_t width, height;
-    m_window->GetSize(width, height);
-    InputSystem::Get()->SetCursorPosition(Vec2(width/2.0f, height/2.0f));
+    m_lastMousePos[0] = mousePosition.X;
+    m_lastMousePos[1] = mousePosition.Y;
 }
 
 void CorvusEditor::OnLeftMouseDown(const InputListener::Vec2& mousePos)
