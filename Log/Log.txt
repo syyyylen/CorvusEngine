@@ -9,5 +9,6 @@
 [Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
 [Debug] ShaderCompiler : compiled : Shaders/SimplePixel.hlsl
 [Debug] GraphicsPipeline: Created a Graphics Pipeline !
+[Debug] Imported mesh
 [Debug] Destroying Corvus Editor
 [Debug] Writing Logs to file
