@@ -2,6 +2,17 @@
 #include "Core.h"
 #include "RHI/D3D12Renderer.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+struct Vertex
+{
+    DirectX::XMFLOAT3 Position;
+    DirectX::XMFLOAT2 UV;
+    DirectX::XMFLOAT3 Normals;
+};
+
 struct Primitive
 {
     std::shared_ptr<Buffer> m_vertexBuffer;
@@ -17,4 +28,10 @@ public:
     ~RenderItem();
 
     std::vector<Primitive> m_primitives;
+
+    void ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string filePath);
+
+private:
+    void ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh *mesh, const aiScene *scene);
+    void ProcessNode(std::shared_ptr<D3D12Renderer> renderer, aiNode *node, const aiScene *scene);
 };

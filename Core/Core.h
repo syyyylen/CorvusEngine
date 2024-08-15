@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+
 #include <memory>
 #include <iostream>
 #include <d3d12.h>
