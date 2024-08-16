@@ -38,12 +38,10 @@ void CommandList::Begin()
 {
     m_commandAllocator->Reset();
     m_commandList->Reset(m_commandAllocator, nullptr);
-    if (m_type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-        ID3D12DescriptorHeap* heaps[] = {
-            m_heaps.ShaderHeap->GetHeap() /*,
-            m_heaps.SamplerHeap->GetHeap()*/
-        };
-        m_commandList->SetDescriptorHeaps(1, heaps); // TODO add sampler heap
+    if (m_type == D3D12_COMMAND_LIST_TYPE_DIRECT)
+    {
+        ID3D12DescriptorHeap* heaps[] = { m_heaps.ShaderHeap->GetHeap(), m_heaps.SamplerHeap->GetHeap() };
+        m_commandList->SetDescriptorHeaps(2, heaps);
     }
 }
 
@@ -74,12 +72,11 @@ void CommandList::BindRenderTargets(const std::vector<std::shared_ptr<Texture>>&
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDescriptors;
     D3D12_CPU_DESCRIPTOR_HANDLE dsvDescriptor;
 
-    for (auto& renderTarget : renderTargets) {
+    for (auto& renderTarget : renderTargets)
         rtvDescriptors.push_back(renderTarget->m_rtv.CPU);
-    }
-    if (depthTarget) {
+    
+    if (depthTarget) 
         dsvDescriptor = depthTarget->m_dsv.CPU;
-    }
 
     m_commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), false, depthTarget ? &dsvDescriptor : nullptr);
 }
@@ -139,6 +136,11 @@ void CommandList::BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipelin
 {
     m_commandList->SetPipelineState(pipeline->GetPipelineState());
     m_commandList->SetGraphicsRootSignature(pipeline->GetRootSignature());
+}
+
+void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
+{
+    m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
 }
 
 void CommandList::Draw(int vertexCount)

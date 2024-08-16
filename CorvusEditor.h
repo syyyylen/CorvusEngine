@@ -30,6 +30,7 @@ private:
     std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<Texture> m_depthBuffer;
+    std::shared_ptr<Sampler> m_textureSampler;
 
     float m_startTime;
     float m_lastTime;
@@ -42,7 +43,7 @@ private:
 
     float m_fov = 0.35f;
     float m_previousFov = m_fov;
-    float m_moveSpeed = 4.5f;
+    float m_moveSpeed = 6.5f;
     bool m_mouseLocked = true;
 
     std::vector<std::shared_ptr<RenderItem>> m_renderItems;

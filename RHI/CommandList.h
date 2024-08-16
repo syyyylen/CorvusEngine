@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "GraphicsPipeline.h"
+#include "Sampler.h"
 #include "Texture.h"
 
 enum class Topology
@@ -34,6 +35,7 @@ public:
     void BindIndexBuffer(std::shared_ptr<Buffer> buffer);
     void BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
+    void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void Draw(int vertexCount);
     void DrawIndexed(int indexCount);
     void CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src);

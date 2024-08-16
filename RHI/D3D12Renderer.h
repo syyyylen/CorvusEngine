@@ -9,6 +9,7 @@
 #include "GraphicsPipeline.h"
 #include "SwapChain.h"
 #include "Uploader.h"
+#include "Sampler.h"
 
 class D3D12Renderer
 {
@@ -34,6 +35,7 @@ public:
     void CreateDepthView(std::shared_ptr<Texture> texture);
     Uploader CreateUploader();
     std::shared_ptr<Texture> CreateTexture(int width, int height, TextureFormat format, TextureType type);
+    std::shared_ptr<Sampler> CreateSampler(D3D12_TEXTURE_ADDRESS_MODE addressMode, D3D12_FILTER filter);
 
     void FlushUploader(Uploader& uploader);
     void WaitForGPU();

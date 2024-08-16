@@ -1,3 +1,5 @@
+SamplerState TextureSampler : register(s1);
+
 struct PixelIn
 {
     float4 position : SV_POSITION;

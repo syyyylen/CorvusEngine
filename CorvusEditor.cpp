@@ -42,6 +42,8 @@ CorvusEditor::CorvusEditor()
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
+    m_textureSampler = m_renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
+
     m_depthBuffer = m_renderer->CreateTexture(1380, 960, TextureFormat::R32Depth, TextureType::DepthTarget);
     m_renderer->CreateDepthView(m_depthBuffer);
 
@@ -61,7 +63,7 @@ CorvusEditor::CorvusEditor()
     m_renderer->CreateConstantBuffer(m_constantBuffer);
 
     auto model = std::make_shared<RenderItem>();
-    model->ImportMesh(m_renderer, "Assets/dragon.obj");
+    model->ImportMesh(m_renderer, "Assets/DamagedHelmet.gltf");
     m_renderItems.push_back(model);
     
     m_startTime = clock();
@@ -143,6 +145,8 @@ void CorvusEditor::Run()
         commandList->BindGraphicsPipeline(m_trianglePipeline);
         
         commandList->BindConstantBuffer(m_constantBuffer, 0);
+
+        // commandList->BindGraphicsSampler(m_textureSampler, 1);
 
         for(const auto renderItem : m_renderItems)
         {

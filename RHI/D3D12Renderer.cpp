@@ -12,6 +12,7 @@ D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
     m_heaps.RtvHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 512);
     m_heaps.ShaderHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048);
     m_heaps.DsvHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1024);
+    m_heaps.SamplerHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 512);
     m_allocator = std::make_shared<Allocator>(m_device);
     m_swapChain = std::make_shared<SwapChain>(m_device, m_directCommandQueue, m_heaps.RtvHeap, hwnd);
 
@@ -149,6 +150,11 @@ Uploader D3D12Renderer::CreateUploader()
 std::shared_ptr<Texture> D3D12Renderer::CreateTexture(int width, int height, TextureFormat format, TextureType type)
 {
     return std::make_shared<Texture>(m_device, m_allocator, width, height, format, type);
+}
+
+std::shared_ptr<Sampler> D3D12Renderer::CreateSampler(D3D12_TEXTURE_ADDRESS_MODE addressMode, D3D12_FILTER filter)
+{
+    return std::make_shared<Sampler>(m_device, m_heaps.SamplerHeap, addressMode, filter);
 }
 
 void D3D12Renderer::FlushUploader(Uploader& uploader)

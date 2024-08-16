@@ -1,7 +1,6 @@
 #include "ShaderCompiler.h"
 
 #include <string>
-#include <atlbase.h>
 #include <dxcapi.h>
 #include <wrl/client.h>
 
