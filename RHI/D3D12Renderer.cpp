@@ -18,7 +18,8 @@ D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
 
     LOG(Debug, "Renderer Initialization Completed");
 
-    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+    for(int i = 0; i < FRAMES_IN_FLIGHT; i++)
+    {
         m_commandBuffers[i] = std::make_shared<CommandList>(m_device, m_heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
         m_frameValues[i] = 0;
     }

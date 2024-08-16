@@ -70,7 +70,7 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
         BindCount++;
     }
 
-    std::sort(ShaderBinds.begin(), ShaderBinds.end(), CompareShaderInput);
+    std::sort(ShaderBinds.begin(), ShaderBinds.begin() + BindCount, CompareShaderInput);
 
     for(int ShaderBindIndex = 0; ShaderBindIndex < BindCount; ShaderBindIndex++)
     {
@@ -120,12 +120,15 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
 
     ID3DBlob* pRootSignatureBlob;
     ID3DBlob* pErrorBlob;
+    
     D3D12SerializeRootSignature(&RootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &pRootSignatureBlob, &pErrorBlob);
-    if (pErrorBlob) {
+    if (pErrorBlob)
+    {
         std::string errorMessage(static_cast<const char*>(pErrorBlob->GetBufferPointer()), pErrorBlob->GetBufferSize());
         LOG(Error, errorMessage);
         pErrorBlob->Release();
     }
+    
     HRESULT hr = device->GetDevice()->CreateRootSignature(0, pRootSignatureBlob->GetBufferPointer(), pRootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
     if(FAILED(hr))
     {
@@ -140,7 +143,9 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     Desc.VS.BytecodeLength = vertexBytecode.Bytecode.size() * sizeof(uint32_t);
     Desc.PS.pShaderBytecode = fragmentBytecode.Bytecode.data();
     Desc.PS.BytecodeLength = fragmentBytecode.Bytecode.size() * sizeof(uint32_t);
-    for (int RTVIndex = 0; RTVIndex < specs.FormatCount; RTVIndex++) {
+    
+    for (int RTVIndex = 0; RTVIndex < specs.FormatCount; RTVIndex++)
+    {
         Desc.BlendState.RenderTarget[RTVIndex].SrcBlend = D3D12_BLEND_ONE;
         Desc.BlendState.RenderTarget[RTVIndex].DestBlend = D3D12_BLEND_ZERO;
         Desc.BlendState.RenderTarget[RTVIndex].BlendOp = D3D12_BLEND_OP_ADD;
@@ -153,18 +158,22 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
         Desc.RTVFormats[RTVIndex] = DXGI_FORMAT(specs.Formats[RTVIndex]);
         Desc.NumRenderTargets = specs.FormatCount;
     }
+    
     Desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
     Desc.RasterizerState.FillMode = D3D12_FILL_MODE(specs.Fill);
     Desc.RasterizerState.CullMode = D3D12_CULL_MODE(specs.Cull);
     Desc.RasterizerState.DepthClipEnable = true;
     Desc.RasterizerState.FrontCounterClockwise = true;
     Desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    if (specs.DepthEnabled) {
+    
+    if (specs.DepthEnabled)
+    {
         Desc.DepthStencilState.DepthEnable = true;
         Desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         Desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC(specs.Depth);
         Desc.DSVFormat = DXGI_FORMAT(specs.DepthFormat);
     }
+    
     Desc.SampleDesc.Count = 1;
 
     InputElementSemanticNames.reserve(VertexDesc.InputParameters);

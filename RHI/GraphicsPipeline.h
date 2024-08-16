@@ -52,5 +52,4 @@ public:
 private:
     ID3D12PipelineState* m_pipelineState;
     ID3D12RootSignature* m_rootSignature;
-    std::unordered_map<std::string, int> m_bindings;
 };
