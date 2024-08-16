@@ -60,11 +60,13 @@ Texture::Texture(std::shared_ptr<Device> device, std::shared_ptr<Allocator> allo
     ResourceDesc.Flags = GetResourceFlag(type);
 
     m_resource = allocator->Allocate(&AllocationDesc, &ResourceDesc, m_state);
+    m_hasAlloc = true;
 }
 
 Texture::~Texture()
 {
-    // m_resource.Allocation->Release(); // TODO this crashes, to fix
+    if(m_hasAlloc)
+        m_resource.Allocation->Release();
 }
 
 void Texture::CreateRenderTarget(std::shared_ptr<DescriptorHeap> heap)

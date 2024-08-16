@@ -69,7 +69,6 @@ DescriptorHandle DescriptorHeap::Allocate()
 
 void DescriptorHeap::Free(DescriptorHandle& handle)
 {
-    return; // TODO this crashes, to fix
     if(!handle.IsValid())
         return;
 

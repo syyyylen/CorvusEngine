@@ -50,4 +50,5 @@ private:
     D3D12_RESOURCE_STATES m_state;
 
     GPUResource m_resource;
+    bool m_hasAlloc = false;
 };
