@@ -7,7 +7,7 @@ cbuffer CBuf : register(b0)
 
 cbuffer ObjectCbuf : register(b1)
 {
-    float4x4 World;
+    row_major float4x4 World;
 };
 
 struct VertexIn
@@ -23,7 +23,8 @@ struct VertexOut
 {
     float4 Position : SV_POSITION;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD;
+    float2 uv : TEXCOORD0;
+    float time : TEXCOORD1;
     row_major float3x3 tbn : TEXCOORD2;
 };
 
@@ -35,9 +36,11 @@ VertexOut Main(VertexIn Input)
     Output.normal = normalize(mul(Input.normal, (float3x3)World));
     Output.uv = Input.texcoord;
     
-    // Output.tbn[0] = normalize(mul(Input.tangent, World));
-    // Output.tbn[1] = normalize(mul(Input.binormal, World));
-    // Output.tbn[2] = normalize(mul(Input.normal, World));
-    
+    Output.tbn[0] = normalize(mul(Input.tangent, (float3x3)World));
+    Output.tbn[1] = normalize(mul(Input.binormal, (float3x3)World));
+    Output.tbn[2] = normalize(mul(Input.normal, (float3x3)World));
+
+    Output.time = time;
+
     return Output;
 }

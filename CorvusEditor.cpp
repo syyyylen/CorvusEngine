@@ -96,11 +96,17 @@ CorvusEditor::CorvusEditor()
 
     Image albedoImg;
     albedoImg.LoadImageFromFile("Assets/DamagedHelmet_albedo.jpg");
-
-    Uploader uploader = m_renderer->CreateUploader();
     m_albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
     m_renderer->CreateShaderResourceView(m_albedoTexture);
+
+    Image normalImg;
+    normalImg.LoadImageFromFile("Assets/DamagedHelmet_normal.jpg");
+    m_normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+    m_renderer->CreateShaderResourceView(m_normalTexture);
+
+    Uploader uploader = m_renderer->CreateUploader();
     uploader.CopyHostToDeviceTexture(albedoImg, m_albedoTexture);
+    uploader.CopyHostToDeviceTexture(normalImg, m_normalTexture);
     m_renderer->FlushUploader(uploader);
 }
 
@@ -173,6 +179,7 @@ void CorvusEditor::Run()
         commandList->BindGraphicsSampler(m_textureSampler, 2);
 
         commandList->BindGraphicsShaderResource(m_albedoTexture, 3);
+        commandList->BindGraphicsShaderResource(m_normalTexture, 4);
 
         for(const auto renderItem : m_renderItems)
         {

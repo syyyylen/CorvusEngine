@@ -35,6 +35,7 @@ private:
 
     // TODO material system
     std::shared_ptr<Texture> m_albedoTexture;
+    std::shared_ptr<Texture> m_normalTexture;
 
     float m_startTime;
     float m_lastTime;

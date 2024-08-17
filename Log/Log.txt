@@ -13,5 +13,6 @@
 [Debug] GraphicsPipeline: Created a Graphics Pipeline !
 [Debug] RenderItem : Imported mesh
 [Debug] Image : Loaded image Assets/DamagedHelmet_albedo.jpg
+[Debug] Image : Loaded image Assets/DamagedHelmet_normal.jpg
 [Debug] Destroying Corvus Editor
 [Debug] Writing Logs to file
