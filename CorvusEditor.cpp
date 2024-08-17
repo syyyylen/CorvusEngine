@@ -8,11 +8,16 @@
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
 
-struct TempCbuf
+struct SceneConstantBuffer
 {
-    DirectX::XMFLOAT4X4 worldViewProj;
-    float time;
-    float padding[3];
+    DirectX::XMFLOAT4X4 ViewProj;
+    float Time;
+    float Padding[3];
+};
+
+struct ObjectConstantBuffer
+{
+    DirectX::XMFLOAT4X4 World;
 };
 
 CorvusEditor::CorvusEditor()
@@ -60,11 +65,20 @@ CorvusEditor::CorvusEditor()
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_trianglePipeline = m_renderer->CreateGraphicsPipeline(specs);
+    
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
+    m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    m_renderer->CreateConstantBuffer(m_objectConstantBuffer);
 
     auto model = std::make_shared<RenderItem>();
     model->ImportMesh(m_renderer, "Assets/DamagedHelmet.gltf");
+    
+    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->m_primitives[0].Transform);
+    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(90.0f));
+    mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
+    DirectX::XMStoreFloat4x4(&model->m_primitives[0].Transform, mat);
+    
     m_renderItems.push_back(model);
     
     m_startTime = clock();
@@ -131,15 +145,15 @@ void CorvusEditor::Run()
         auto view = m_camera.GetViewMatrix();
         auto proj = m_camera.GetProjMatrix();
 
-        DirectX::XMMATRIX worldViewProj = view * proj; // TODO add world mat
+        DirectX::XMMATRIX viewProj = view * proj;
 
-        TempCbuf cbuf;
-        cbuf.time = m_elapsedTime;
-        DirectX::XMStoreFloat4x4(&cbuf.worldViewProj, DirectX::XMMatrixTranspose(worldViewProj));
+        SceneConstantBuffer cbuf;
+        cbuf.Time = m_elapsedTime;
+        DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
         
         void* data;
         m_constantBuffer->Map(0, 0, &data);
-        memcpy(data, &cbuf, sizeof(TempCbuf));
+        memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
         m_constantBuffer->Unmap(0, 0);
 
         commandList->Begin();
@@ -156,14 +170,25 @@ void CorvusEditor::Run()
         
         commandList->BindConstantBuffer(m_constantBuffer, 0);
         
-        commandList->BindGraphicsSampler(m_textureSampler, 1);
+        commandList->BindGraphicsSampler(m_textureSampler, 2);
 
-        commandList->BindGraphicsShaderResource(m_albedoTexture, 2);
+        commandList->BindGraphicsShaderResource(m_albedoTexture, 3);
 
         for(const auto renderItem : m_renderItems)
         {
             for(const auto& primitive : renderItem->m_primitives)
             {
+                ObjectConstantBuffer objCbuf;
+                DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&primitive.Transform);
+                DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
+        
+                void* objCbufData;
+                m_objectConstantBuffer->Map(0, 0, &objCbufData);
+                memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
+                m_objectConstantBuffer->Unmap(0, 0);
+
+                commandList->BindConstantBuffer(m_objectConstantBuffer, 1);
+                
                 commandList->BindVertexBuffer(primitive.m_vertexBuffer);
                 commandList->BindIndexBuffer(primitive.m_indicesBuffer);
                 commandList->DrawIndexed(primitive.m_indexCount);

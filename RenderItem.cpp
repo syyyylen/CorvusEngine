@@ -24,6 +24,8 @@ void RenderItem::ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string
 void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh* mesh, const aiScene* scene)
 {
     Primitive out;
+    DirectX::XMMATRIX identityMatrix = DirectX::XMMatrixIdentity();
+    DirectX::XMStoreFloat4x4(&out.Transform, identityMatrix);
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;

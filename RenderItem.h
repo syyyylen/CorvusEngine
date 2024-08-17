@@ -17,6 +17,7 @@ struct Vertex
 
 struct Primitive
 {
+    DirectX::XMFLOAT4X4 Transform;
     std::shared_ptr<Buffer> m_vertexBuffer;
     std::shared_ptr<Buffer> m_indicesBuffer;
     int m_vertexCount;

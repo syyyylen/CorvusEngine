@@ -1,8 +1,13 @@
 cbuffer CBuf : register(b0)
 {
-    float4x4 WorldViewProj;
+    float4x4 ViewProj;
     float time;
     float3 padding;
+};
+
+cbuffer ObjectCbuf : register(b1)
+{
+    float4x4 World;
 };
 
 struct VertexIn
@@ -25,8 +30,9 @@ struct VertexOut
 VertexOut Main(VertexIn Input)
 {
     VertexOut Output;
-    Output.Position = mul(float4(Input.position, 1.0), WorldViewProj);
-    Output.normal = normalize(Input.normal); // TODO * World matrix
+    float4 pos = mul(float4(Input.position, 1.0), World);
+    Output.Position = mul(pos, ViewProj);
+    Output.normal = normalize(mul(Input.normal, (float3x3)World));
     Output.uv = Input.texcoord;
     
     // Output.tbn[0] = normalize(mul(Input.tangent, World));
