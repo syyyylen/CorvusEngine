@@ -32,6 +32,9 @@ private:
     std::shared_ptr<Texture> m_depthBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
 
+    // TODO material system
+    std::shared_ptr<Texture> m_albedoTexture;
+
     float m_startTime;
     float m_lastTime;
     float m_elapsedTime;

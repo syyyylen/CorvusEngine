@@ -37,6 +37,7 @@ public:
     void SetState(D3D12_RESOURCE_STATES state) { m_state = state; }
     D3D12_RESOURCE_STATES GetState() { return m_state; }
     GPUResource& GetResource() { return m_resource; }
+    TextureFormat GetFormat() { return m_format; }
 
     DescriptorHandle m_rtv;
     DescriptorHandle m_dsv;
@@ -44,10 +45,13 @@ public:
 
 private:
     friend class SwapChain;
+    friend class CommandList;
 
     std::shared_ptr<Device> m_device;
     TextureFormat m_format;
     D3D12_RESOURCE_STATES m_state;
+    int m_width;
+    int m_height;
 
     GPUResource m_resource;
     bool m_hasAlloc = false;

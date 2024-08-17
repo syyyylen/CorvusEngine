@@ -22,7 +22,7 @@ Texture::Texture(std::shared_ptr<Device> device) : m_device(device)
 }
 
 Texture::Texture(std::shared_ptr<Device> device, std::shared_ptr<Allocator> allocator, uint32_t width, uint32_t height, TextureFormat format, TextureType type)
-    : m_device(device), m_format(format)
+    : m_device(device), m_format(format), m_width(width), m_height(height)
 {
     switch(type)
     {

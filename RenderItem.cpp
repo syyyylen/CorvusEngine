@@ -13,12 +13,12 @@ void RenderItem::ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(filePath, aiProcess_FlipWindingOrder | aiProcess_CalcTangentSpace);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        LOG(Error, "Failed assimp import");
+        LOG(Error, "RenderItem : Failed assimp import");
         return;
     }
     
     ProcessNode(renderer, scene->mRootNode, scene);
-    LOG(Debug, "Imported mesh");
+    LOG(Debug, "RenderItem : Imported mesh");
 }
 
 void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh* mesh, const aiScene* scene)

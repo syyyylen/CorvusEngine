@@ -35,11 +35,13 @@ public:
     void BindIndexBuffer(std::shared_ptr<Buffer> buffer);
     void BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
+    void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void Draw(int vertexCount);
     void DrawIndexed(int indexCount);
     void CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src);
     void CopyBufferToBuffer(std::shared_ptr<Buffer> dst, std::shared_ptr<Buffer> src);
+    void CopyBufferToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Buffer> src);
 
     ID3D12GraphicsCommandList* GetCommandList() { return m_commandList; }
 

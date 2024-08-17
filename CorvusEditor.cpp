@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include <ImGui/imgui.h>
 
+#include "Image.h"
 #include "InputSystem.h"
 #include "ShaderCompiler.h"
 #include "RHI/Buffer.h"
@@ -78,6 +79,15 @@ CorvusEditor::CorvusEditor()
 
     m_lastMousePos[0] = width/2.0f;
     m_lastMousePos[1] = height/2.0f;
+
+    Image albedoImg;
+    albedoImg.LoadImageFromFile("Assets/DamagedHelmet_albedo.jpg");
+
+    Uploader uploader = m_renderer->CreateUploader();
+    m_albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+    m_renderer->CreateShaderResourceView(m_albedoTexture);
+    uploader.CopyHostToDeviceTexture(albedoImg, m_albedoTexture);
+    m_renderer->FlushUploader(uploader);
 }
 
 CorvusEditor::~CorvusEditor()
@@ -145,8 +155,10 @@ void CorvusEditor::Run()
         commandList->BindGraphicsPipeline(m_trianglePipeline);
         
         commandList->BindConstantBuffer(m_constantBuffer, 0);
+        
+        commandList->BindGraphicsSampler(m_textureSampler, 1);
 
-        // commandList->BindGraphicsSampler(m_textureSampler, 1);
+        commandList->BindGraphicsShaderResource(m_albedoTexture, 2);
 
         for(const auto renderItem : m_renderItems)
         {

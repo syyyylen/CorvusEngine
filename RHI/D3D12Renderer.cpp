@@ -10,7 +10,7 @@ D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
     m_computeCommandQueue = std::make_shared<CommandQueue>(m_device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
     m_copyCommandQueue = std::make_shared<CommandQueue>(m_device, D3D12_COMMAND_LIST_TYPE_COPY);
     m_heaps.RtvHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 512);
-    m_heaps.ShaderHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2048);
+    m_heaps.ShaderHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 8192);
     m_heaps.DsvHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1024);
     m_heaps.SamplerHeap = std::make_shared<DescriptorHeap>(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 512);
     m_allocator = std::make_shared<Allocator>(m_device);
@@ -143,6 +143,11 @@ void D3D12Renderer::CreateDepthView(std::shared_ptr<Texture> texture)
     texture->CreateDepthTarget(m_heaps.DsvHeap);
 }
 
+void D3D12Renderer::CreateShaderResourceView(std::shared_ptr<Texture> texture)
+{
+    texture->CreateShaderResource(m_heaps.ShaderHeap);
+}
+
 Uploader D3D12Renderer::CreateUploader()
 {
     return Uploader(m_device, m_heaps, m_allocator);
@@ -182,6 +187,13 @@ void D3D12Renderer::FlushUploader(Uploader& uploader)
             case Uploader::UploadCommandType::TextureToTexture: {
                 cmdList->CopyTextureToTexture(command.destTexture, command.sourceTexture);
                 break;
+            }
+            case Uploader::UploadCommandType::BufferToTexture: {
+                auto state = command.destTexture->GetState();
+                cmdList->ImageBarrier(command.destTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+                cmdList->CopyBufferToTexture(command.destTexture, command.sourceBuffer);
+                cmdList->ImageBarrier(command.destTexture, state);
+                break;                      
             }
         }
     }

@@ -138,6 +138,11 @@ void CommandList::BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipelin
     m_commandList->SetGraphicsRootSignature(pipeline->GetRootSignature());
 }
 
+void CommandList::BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx)
+{
+    m_commandList->SetGraphicsRootDescriptorTable(idx, texture->m_srvUav.GPU);
+}
+
 void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
 {
     m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
@@ -171,4 +176,25 @@ void CommandList::CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared
 void CommandList::CopyBufferToBuffer(std::shared_ptr<Buffer> dst, std::shared_ptr<Buffer> src)
 {
     m_commandList->CopyResource(dst->GetResource().Resource, src->GetResource().Resource);
+}
+
+void CommandList::CopyBufferToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Buffer> src)
+{
+    D3D12_TEXTURE_COPY_LOCATION CopySource = {};
+    CopySource.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    CopySource.pResource = src->m_resource.Resource;
+    CopySource.PlacedFootprint.Offset = 0;
+    CopySource.PlacedFootprint.Footprint.Format = DXGI_FORMAT(dst->GetFormat());
+    CopySource.PlacedFootprint.Footprint.Width = dst->m_width;
+    CopySource.PlacedFootprint.Footprint.Height = dst->m_height;
+    CopySource.PlacedFootprint.Footprint.Depth = 1;
+    CopySource.PlacedFootprint.Footprint.RowPitch = dst->m_width * 4;
+    CopySource.SubresourceIndex = 0;
+
+    D3D12_TEXTURE_COPY_LOCATION CopyDest = {};
+    CopyDest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    CopyDest.pResource = dst->m_resource.Resource;
+    CopyDest.SubresourceIndex = 0;
+
+    m_commandList->CopyTextureRegion(&CopyDest, 0, 0, 0, &CopySource, nullptr);
 }

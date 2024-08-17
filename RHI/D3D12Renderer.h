@@ -33,6 +33,7 @@ public:
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);
     void CreateConstantBuffer(std::shared_ptr<Buffer> buffer);
     void CreateDepthView(std::shared_ptr<Texture> texture);
+    void CreateShaderResourceView(std::shared_ptr<Texture> texture);
     Uploader CreateUploader();
     std::shared_ptr<Texture> CreateTexture(int width, int height, TextureFormat format, TextureType type);
     std::shared_ptr<Sampler> CreateSampler(D3D12_TEXTURE_ADDRESS_MODE addressMode, D3D12_FILTER filter);

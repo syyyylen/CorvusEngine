@@ -4,6 +4,7 @@
 #include "Allocator.h"
 #include "Device.h"
 
+struct Image;
 class Renderer;
 class Buffer;
 class Texture;
@@ -18,6 +19,7 @@ public:
 
     void CopyHostToDeviceShared(void* pData, uint64_t uiSize, std::shared_ptr<Buffer> destBuffer);
     void CopyHostToDeviceLocal(void* pData, uint64_t uiSize, std::shared_ptr<Buffer> destBuffer);
+    void CopyHostToDeviceTexture(Image& image, std::shared_ptr<Texture> destTexture);
     void CopyBufferToBuffer(std::shared_ptr<Buffer> sourceBuffer, std::shared_ptr<Buffer> destBuffer);
     void CopyTextureToTexture(std::shared_ptr<Texture> sourceTexture, std::shared_ptr<Texture> destTexture);
 
@@ -33,7 +35,8 @@ private:
         HostToDeviceShared,
         HostToDeviceLocal,
         BufferToBuffer,
-        TextureToTexture
+        TextureToTexture,
+        BufferToTexture
     };
 
     struct UploadCommand
