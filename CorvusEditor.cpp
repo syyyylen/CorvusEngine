@@ -74,34 +74,44 @@ CorvusEditor::CorvusEditor()
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
 
-    auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, float offsetX, float rotX)
+    auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
+        float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f)
     {
         auto model = std::make_shared<RenderItem>();
         model->ImportMesh(m_renderer, modelPath);
 
-        Image albedoImg;
-        albedoImg.LoadImageFromFile(albedoPath);
-        auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-        m_renderer->CreateShaderResourceView(albedoTexture);
-        model->GetMaterial().HasAlbedo = true;
-        model->GetMaterial().Albedo = albedoTexture;
-        
-        Image normalImg;
-        normalImg.LoadImageFromFile(normalPath);
-        auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-        m_renderer->CreateShaderResourceView(normalTexture);
-        model->GetMaterial().HasNormal = true;
-        model->GetMaterial().Normal = normalTexture;
-        
         Uploader uploader = m_renderer->CreateUploader();
-        uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
-        uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
-        m_renderer->FlushUploader(uploader);
+        Image albedoImg; // We need those img inside the uploader scope
+        Image normalImg;
+
+        if(!albedoPath.empty())
+        {
+            albedoImg.LoadImageFromFile(albedoPath);
+            auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+            m_renderer->CreateShaderResourceView(albedoTexture);
+            model->GetMaterial().HasAlbedo = true;
+            model->GetMaterial().Albedo = albedoTexture;
+            uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
+        }
+
+        if(!normalPath.empty())
+        {
+            normalImg.LoadImageFromFile(normalPath);
+            auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+            m_renderer->CreateShaderResourceView(normalTexture);
+            model->GetMaterial().HasNormal = true;
+            model->GetMaterial().Normal = normalTexture;
+            uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
+        }
+
+        if(uploader.HasCommands())
+            m_renderer->FlushUploader(uploader);
 
         DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
         mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotX));
         mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
-        mat *= DirectX::XMMatrixTranslation(offsetX, 0.0f, 0.0f);
+        mat *= DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f);
+        mat *= DirectX::XMMatrixScaling(scale, scale, scale);
         DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
 
         ObjectConstantBuffer objCbuf;
@@ -121,8 +131,10 @@ CorvusEditor::CorvusEditor()
         m_renderItems.push_back(model);
     };
 
-    addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 90.0f);
-    addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0f, 0.0f);
+    addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 0.0f, 90.0f);
+    addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0);
+    addModel("Assets/sphere.gltf", "", "", 6.0f);
+    addModel("Assets/dragon.obj", "", "", 38.0f, -4.0f, 0.0f, 0.25f);
     
     m_startTime = clock();
 

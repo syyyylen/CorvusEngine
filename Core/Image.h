@@ -7,7 +7,7 @@ struct Image
 
     void LoadImageFromFile(const std::string& path, bool flip = true);
     
-    char* Bytes;
+    char* Bytes = nullptr;
     int Width;
     int Height;
 };

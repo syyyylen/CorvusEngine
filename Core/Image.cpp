@@ -3,7 +3,7 @@
 
 Image::~Image()
 {
-    if (Bytes != nullptr)
+    if(Bytes != nullptr)
     {
         delete[] Bytes;
         Bytes = nullptr;

@@ -22,6 +22,7 @@ public:
     void CopyHostToDeviceTexture(Image& image, std::shared_ptr<Texture> destTexture);
     void CopyBufferToBuffer(std::shared_ptr<Buffer> sourceBuffer, std::shared_ptr<Buffer> destBuffer);
     void CopyTextureToTexture(std::shared_ptr<Texture> sourceTexture, std::shared_ptr<Texture> destTexture);
+    bool HasCommands() { return !m_commands.empty(); }
 
 private:
     friend class D3D12Renderer;

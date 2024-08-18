@@ -39,12 +39,12 @@ float4 Main(PixelIn Input) : SV_TARGET
     float3 ambiant = 0.1f * albedo.xyz;
     float3 diffuse = max(0.0f, dot(dirLight, normal)) * lightColor;
     
-    float3 reflectedLight = normalize(reflect(dirLight, normal));
+    float3 reflectedLight = normalize(reflect(-dirLight, normal));
     float3 view = normalize(Input.Position.xyz - Input.CameraPosition);
     float amountSpecularLight = 0;
     if(dot(dirLight, Input.normal) > 0) // we use vertex normal instead of normal map one
         amountSpecularLight = pow(max(0.0f, dot(reflectedLight, view)), 10.0f /* Shininess */);
-    float3 specular = amountSpecularLight * lightColor * 1.0f;
+    float3 specular = amountSpecularLight * lightColor * 0.8f;
 
     float3 finalLight = diffuse + specular + ambiant;
 

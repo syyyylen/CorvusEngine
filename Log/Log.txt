@@ -17,6 +17,8 @@
 [Debug] RenderItem : Imported mesh
 [Debug] Image : Loaded image Assets/SciFiHelmet_BaseColor.png
 [Debug] Image : Loaded image Assets/SciFiHelmet_Normal.png
+[Debug] RenderItem : Imported mesh
+[Debug] RenderItem : Imported mesh
 [Debug] Window resize !
 [Debug] Destroying Corvus Editor
 [Debug] Writing Logs to file
