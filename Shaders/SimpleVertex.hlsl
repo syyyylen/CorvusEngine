@@ -2,12 +2,12 @@ cbuffer CBuf : register(b0)
 {
     float4x4 ViewProj;
     float time;
-    float3 padding;
+    float3 CameraPosition;
 };
 
 cbuffer ObjectCbuf : register(b1)
 {
-    row_major float4x4 World;
+    column_major float4x4 World;
     bool HasAlbedo;
     bool HasNormalMap;
 };
@@ -29,7 +29,8 @@ struct VertexOut
     float time : TEXCOORD1;
     bool HasAlbedo : TEXCOORD2;
     bool HasNormalMap : TEXCOORD3;
-    row_major float3x3 tbn : TEXCOORD4;
+    float3 CameraPosition : TEXCOORD4;
+    row_major float3x3 tbn : TEXCOORD5;
 };
 
 VertexOut Main(VertexIn Input)
@@ -47,6 +48,7 @@ VertexOut Main(VertexIn Input)
     Output.time = time;
     Output.HasAlbedo = HasAlbedo;
     Output.HasNormalMap = HasNormalMap;
+    Output.CameraPosition = CameraPosition;
 
     return Output;
 }

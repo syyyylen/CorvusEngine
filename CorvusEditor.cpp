@@ -12,7 +12,7 @@ struct SceneConstantBuffer
 {
     DirectX::XMFLOAT4X4 ViewProj;
     float Time;
-    float Padding[3];
+    DirectX::XMFLOAT3 CameraPosition;
 };
 
 struct ObjectConstantBuffer
@@ -72,18 +72,56 @@ CorvusEditor::CorvusEditor()
     
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
-    m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    m_renderer->CreateConstantBuffer(m_objectConstantBuffer);
 
-    auto model = std::make_shared<RenderItem>();
-    model->ImportMesh(m_renderer, "Assets/SciFiHelmet.gltf");
-    
-    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
-    // mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(90.0f));
-    mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
-    DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
-    
-    m_renderItems.push_back(model);
+    auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, float offsetX, float rotX)
+    {
+        auto model = std::make_shared<RenderItem>();
+        model->ImportMesh(m_renderer, modelPath);
+
+        Image albedoImg;
+        albedoImg.LoadImageFromFile(albedoPath);
+        auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+        m_renderer->CreateShaderResourceView(albedoTexture);
+        model->GetMaterial().HasAlbedo = true;
+        model->GetMaterial().Albedo = albedoTexture;
+        
+        Image normalImg;
+        normalImg.LoadImageFromFile(normalPath);
+        auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+        m_renderer->CreateShaderResourceView(normalTexture);
+        model->GetMaterial().HasNormal = true;
+        model->GetMaterial().Normal = normalTexture;
+        
+        Uploader uploader = m_renderer->CreateUploader();
+        uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
+        uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
+        m_renderer->FlushUploader(uploader);
+
+        DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+        mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotX));
+        mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
+        mat *= DirectX::XMMatrixTranslation(offsetX, 0.0f, 0.0f);
+        DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
+
+        ObjectConstantBuffer objCbuf;
+        objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
+        objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
+        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+        DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
+
+        model->GetPrimitives()[0].m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+        m_renderer->CreateConstantBuffer(model->GetPrimitives()[0].m_objectConstantBuffer);
+
+        void* objCbufData;
+        model->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
+        memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
+        model->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
+
+        m_renderItems.push_back(model);
+    };
+
+    addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 90.0f);
+    addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0f, 0.0f);
     
     m_startTime = clock();
 
@@ -97,25 +135,6 @@ CorvusEditor::CorvusEditor()
 
     m_lastMousePos[0] = width/2.0f;
     m_lastMousePos[1] = height/2.0f;
-
-    Image albedoImg;
-    albedoImg.LoadImageFromFile("Assets/SciFiHelmet_BaseColor.png");
-    auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-    m_renderer->CreateShaderResourceView(albedoTexture);
-    model->GetMaterial().HasAlbedo = true;
-    model->GetMaterial().Albedo = albedoTexture;
-
-    // Image normalImg;
-    // normalImg.LoadImageFromFile("Assets/SciFiHelmet_Normal.png");
-    // auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-    // m_renderer->CreateShaderResourceView(normalTexture);
-    // model->GetMaterial().HasNormal = true;
-    // model->GetMaterial().Normal = normalTexture;
-
-    Uploader uploader = m_renderer->CreateUploader();
-    uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
-    // uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
-    m_renderer->FlushUploader(uploader);
 }
 
 CorvusEditor::~CorvusEditor()
@@ -163,6 +182,7 @@ void CorvusEditor::Run()
 
         SceneConstantBuffer cbuf;
         cbuf.Time = m_elapsedTime;
+        cbuf.CameraPosition = m_camera.GetPosition();
         DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
         
         void* data;
@@ -199,19 +219,8 @@ void CorvusEditor::Run()
             const auto primitives = renderItem->GetPrimitives();
             for(const auto& primitive : primitives)
             {
-                ObjectConstantBuffer objCbuf;
-                objCbuf.HasAlbedo = material.HasAlbedo;
-                objCbuf.HasNormalMap = material.HasNormal;
-                DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&primitive.Transform);
-                DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
-        
-                void* objCbufData;
-                m_objectConstantBuffer->Map(0, 0, &objCbufData);
-                memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-                m_objectConstantBuffer->Unmap(0, 0);
+                commandList->BindConstantBuffer(primitive.m_objectConstantBuffer, 1);
 
-                commandList->BindConstantBuffer(m_objectConstantBuffer, 1);
-                
                 commandList->BindVertexBuffer(primitive.m_vertexBuffer);
                 commandList->BindIndexBuffer(primitive.m_indicesBuffer);
                 commandList->DrawIndexed(primitive.m_indexCount);

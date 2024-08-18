@@ -28,6 +28,7 @@ struct Primitive
     DirectX::XMFLOAT4X4 Transform;
     std::shared_ptr<Buffer> m_vertexBuffer;
     std::shared_ptr<Buffer> m_indicesBuffer;
+    std::shared_ptr<Buffer> m_objectConstantBuffer;
     int m_vertexCount;
     int m_indexCount;
 };

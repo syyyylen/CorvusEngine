@@ -19,6 +19,7 @@ public:
 
     DirectX::XMMATRIX GetViewMatrix() { return XMLoadFloat4x4(&m_view); }
     DirectX::XMMATRIX GetProjMatrix() { return XMLoadFloat4x4(&m_proj); }
+    DirectX::XMFLOAT3 GetPosition() { return m_position; }
 
 private:
     DirectX::XMFLOAT4X4 m_view;
