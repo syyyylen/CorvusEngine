@@ -46,5 +46,7 @@ private:
     float m_moveSpeed = 6.5f;
     bool m_mouseLocked = true;
 
+    int m_viewMode;
+    
     std::vector<std::shared_ptr<RenderItem>> m_renderItems;
 };

@@ -13,6 +13,7 @@ struct SceneConstantBuffer
     DirectX::XMFLOAT4X4 ViewProj;
     float Time;
     DirectX::XMFLOAT3 CameraPosition;
+    int Mode;
 };
 
 struct ObjectConstantBuffer
@@ -183,6 +184,7 @@ void CorvusEditor::Run()
         SceneConstantBuffer cbuf;
         cbuf.Time = m_elapsedTime;
         cbuf.CameraPosition = m_camera.GetPosition();
+        cbuf.Mode = m_viewMode;
         DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
         
         void* data;
@@ -249,6 +251,8 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
+        static const char* modes[] = { "Default", "Diffuse", "Specular", "Albedo", "Normal" };
+        ImGui::Combo("Mode", (int*)&m_viewMode, modes, 5);
         ImGui::End();
         
         m_renderer->EndImGuiFrame();
