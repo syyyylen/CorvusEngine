@@ -234,7 +234,6 @@ void CorvusEditor::Run()
             for(const auto& primitive : primitives)
             {
                 commandList->BindConstantBuffer(primitive.m_objectConstantBuffer, 1);
-
                 commandList->BindVertexBuffer(primitive.m_vertexBuffer);
                 commandList->BindIndexBuffer(primitive.m_indicesBuffer);
                 commandList->DrawIndexed(primitive.m_indexCount);
