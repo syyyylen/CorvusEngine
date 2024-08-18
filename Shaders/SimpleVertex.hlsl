@@ -8,6 +8,8 @@ cbuffer CBuf : register(b0)
 cbuffer ObjectCbuf : register(b1)
 {
     row_major float4x4 World;
+    bool HasAlbedo;
+    bool HasNormalMap;
 };
 
 struct VertexIn
@@ -25,7 +27,9 @@ struct VertexOut
     float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
     float time : TEXCOORD1;
-    row_major float3x3 tbn : TEXCOORD2;
+    bool HasAlbedo : TEXCOORD2;
+    bool HasNormalMap : TEXCOORD3;
+    row_major float3x3 tbn : TEXCOORD4;
 };
 
 VertexOut Main(VertexIn Input)
@@ -41,6 +45,8 @@ VertexOut Main(VertexIn Input)
     Output.tbn[2] = normalize(mul(Input.normal, (float3x3)World));
 
     Output.time = time;
+    Output.HasAlbedo = HasAlbedo;
+    Output.HasNormalMap = HasNormalMap;
 
     return Output;
 }

@@ -6,6 +6,14 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+struct Material
+{
+    bool HasAlbedo = false;
+    std::shared_ptr<Texture> Albedo;
+    bool HasNormal = false;
+    std::shared_ptr<Texture> Normal;
+};
+
 struct Vertex
 {
     DirectX::XMFLOAT3 Position;
@@ -29,12 +37,16 @@ class RenderItem
 public:
     RenderItem();
     ~RenderItem();
-
-    std::vector<Primitive> m_primitives;
-
+    
     void ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string filePath);
+
+    std::vector<Primitive>& GetPrimitives() { return m_primitives; }
+    Material& GetMaterial() { return m_material; }
 
 private:
     void ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh *mesh, const aiScene *scene);
     void ProcessNode(std::shared_ptr<D3D12Renderer> renderer, aiNode *node, const aiScene *scene);
+
+    std::vector<Primitive> m_primitives;
+    Material m_material;
 };

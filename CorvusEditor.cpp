@@ -18,6 +18,10 @@ struct SceneConstantBuffer
 struct ObjectConstantBuffer
 {
     DirectX::XMFLOAT4X4 World;
+    int HasAlbedo = false;
+    int HasNormalMap = false;
+    int Padding1;
+    int Padding2;
 };
 
 CorvusEditor::CorvusEditor()
@@ -72,18 +76,18 @@ CorvusEditor::CorvusEditor()
     m_renderer->CreateConstantBuffer(m_objectConstantBuffer);
 
     auto model = std::make_shared<RenderItem>();
-    model->ImportMesh(m_renderer, "Assets/DamagedHelmet.gltf");
+    model->ImportMesh(m_renderer, "Assets/SciFiHelmet.gltf");
     
-    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->m_primitives[0].Transform);
-    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(90.0f));
+    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+    // mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(90.0f));
     mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
-    DirectX::XMStoreFloat4x4(&model->m_primitives[0].Transform, mat);
+    DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
     
     m_renderItems.push_back(model);
     
     m_startTime = clock();
 
-    // m_window->Maximize();
+    m_window->Maximize();
 
     uint32_t width, height;
     m_window->GetSize(width, height);
@@ -95,18 +99,22 @@ CorvusEditor::CorvusEditor()
     m_lastMousePos[1] = height/2.0f;
 
     Image albedoImg;
-    albedoImg.LoadImageFromFile("Assets/DamagedHelmet_albedo.jpg");
-    m_albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-    m_renderer->CreateShaderResourceView(m_albedoTexture);
+    albedoImg.LoadImageFromFile("Assets/SciFiHelmet_BaseColor.png");
+    auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+    m_renderer->CreateShaderResourceView(albedoTexture);
+    model->GetMaterial().HasAlbedo = true;
+    model->GetMaterial().Albedo = albedoTexture;
 
-    Image normalImg;
-    normalImg.LoadImageFromFile("Assets/DamagedHelmet_normal.jpg");
-    m_normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-    m_renderer->CreateShaderResourceView(m_normalTexture);
+    // Image normalImg;
+    // normalImg.LoadImageFromFile("Assets/SciFiHelmet_Normal.png");
+    // auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+    // m_renderer->CreateShaderResourceView(normalTexture);
+    // model->GetMaterial().HasNormal = true;
+    // model->GetMaterial().Normal = normalTexture;
 
     Uploader uploader = m_renderer->CreateUploader();
-    uploader.CopyHostToDeviceTexture(albedoImg, m_albedoTexture);
-    uploader.CopyHostToDeviceTexture(normalImg, m_normalTexture);
+    uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
+    // uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
     m_renderer->FlushUploader(uploader);
 }
 
@@ -178,14 +186,22 @@ void CorvusEditor::Run()
         
         commandList->BindGraphicsSampler(m_textureSampler, 2);
 
-        commandList->BindGraphicsShaderResource(m_albedoTexture, 3);
-        commandList->BindGraphicsShaderResource(m_normalTexture, 4);
-
         for(const auto renderItem : m_renderItems)
         {
-            for(const auto& primitive : renderItem->m_primitives)
+            auto& material = renderItem->GetMaterial();
+
+            if(material.HasAlbedo)
+                commandList->BindGraphicsShaderResource(material.Albedo, 3);
+
+            if(material.HasNormal)
+                commandList->BindGraphicsShaderResource(material.Normal, 4);
+            
+            const auto primitives = renderItem->GetPrimitives();
+            for(const auto& primitive : primitives)
             {
                 ObjectConstantBuffer objCbuf;
+                objCbuf.HasAlbedo = material.HasAlbedo;
+                objCbuf.HasNormalMap = material.HasNormal;
                 DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&primitive.Transform);
                 DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
         
