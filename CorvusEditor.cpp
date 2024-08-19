@@ -15,11 +15,11 @@ struct PointLight
     DirectX::XMFLOAT3 Position;
     float Padding1 = 0.0f;
     // 16 bytes boundary 
-    DirectX::XMFLOAT4 Color = { 1.0, 0.0, 0.0, 1.0 };
+    DirectX::XMFLOAT4 Color = { 1.0, 1.0, 1.0, 1.0 };
     // 16 bytes boundary 
     float ConstantAttenuation = 1.0f;
-    float LinearAttenuation = 0.3f;
-    float QuadraticAttenuation = 0.2f;
+    float LinearAttenuation = 0.2f;
+    float QuadraticAttenuation = 0.1f;
     float Padding3;
     // 16 bytes boundary
     int Enabled = true;
@@ -230,10 +230,14 @@ void CorvusEditor::Run()
         memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
         m_constantBuffer->Unmap(0, 0);
 
-        // TODO point lights 
+        // TODO point lights & proper game object inspector
         
         PointLight testLight = {};
-        testLight.Position = { 0.0f, 0.0f, 3.0f };
+        testLight.Position = m_lightPosition;
+        testLight.ConstantAttenuation = m_lightConstantAttenuation;
+        testLight.LinearAttenuation = m_lightLinearAttenuation;
+        testLight.QuadraticAttenuation = m_lightQuadraticAttenuation;
+        testLight.Color = m_lightColor;
         
         PointLightsConstantBuffer lightsCbuf;
         lightsCbuf.PointLights[0] = testLight;
@@ -306,6 +310,23 @@ void CorvusEditor::Run()
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
         static const char* modes[] = { "Default", "Diffuse", "Specular", "Albedo", "Normal", "Debug" };
         ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
+        ImGui::End();
+
+        ImGui::Begin("Debug Point Light");
+        float pos[3] = { m_lightPosition.x, m_lightPosition.y, m_lightPosition.z };
+        ImGui::InputFloat3("Position", pos);
+        m_lightPosition.x = pos[0];
+        m_lightPosition.y = pos[1];
+        m_lightPosition.z = pos[2];
+        ImGui::SliderFloat("C Attenuation", &m_lightConstantAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("L Attenuation", &m_lightLinearAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Q Attenuation", &m_lightQuadraticAttenuation, 0.0f, 1.0f);
+        float color[4] = { m_lightColor.x, m_lightColor.y, m_lightColor.z, m_lightColor.w };
+        ImGui::ColorEdit4("Color", color);
+        m_lightColor.x = color[0];
+        m_lightColor.y = color[1];
+        m_lightColor.z = color[2];
+        m_lightColor.w = color[3];
         ImGui::End();
         
         m_renderer->EndImGuiFrame();
