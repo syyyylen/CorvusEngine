@@ -2,17 +2,42 @@ SamplerState Sampler : register(s2);
 Texture2D Albedo : register(t3);
 Texture2D Normal : register(t4);
 
+#define MAX_LIGHTS 1
+
+struct PointLight
+{
+    float3 Position;
+    float Padding1;
+    // 16 bytes boundary 
+    float4 Color;
+    // 16 bytes boundary 
+    float ConstantAttenuation;
+    float LinearAttenuation;
+    float QuadraticAttenuation;
+    float Padding3;
+    // 16 bytes boundary
+    bool Enabled;
+    float3 Padding4;
+    // 16 bytes boundary
+}; // size 48 bytes (16 * 3)
+
+cbuffer LightsCbuf : register(b5)
+{
+    PointLight PointLights[MAX_LIGHTS];
+};
+
 struct PixelIn
 {
     float4 Position : SV_POSITION;
+    float3 PositionWS : TEXCOORD0;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
-    float time : TEXCOORD1;
-    bool HasAlbedo : TEXCOORD2;
-    bool HasNormalMap : TEXCOORD3;
-    float3 CameraPosition : TEXCOORD4;
-    int Mode : TEXCOORD5;
-    row_major float3x3 tbn : TEXCOORD6;
+    float2 uv : TEXCOORD1;
+    float time : TEXCOORD2;
+    bool HasAlbedo : TEXCOORD3;
+    bool HasNormalMap : TEXCOORD4;
+    float3 CameraPosition : TEXCOORD5;
+    int Mode : TEXCOORD6;
+    row_major float3x3 tbn : TEXCOORD7;
 };
 
 float4 Main(PixelIn Input) : SV_TARGET
@@ -60,6 +85,8 @@ float4 Main(PixelIn Input) : SV_TARGET
         return albedo;
     case 4:
         return float4(normal, 1.0f);
+    case 5:
+        return PointLights[0].Color; // TODO point lights 
     default:
         return albedo * float4(finalLight, 1.0);
     }

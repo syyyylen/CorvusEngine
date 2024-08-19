@@ -18,7 +18,7 @@ void RenderItem::ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string
     }
     
     ProcessNode(renderer, scene->mRootNode, scene);
-    LOG(Debug, "RenderItem : Imported mesh");
+    LOG(Debug, "RenderItem : Imported mesh " + filePath);
 }
 
 void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh* mesh, const aiScene* scene)

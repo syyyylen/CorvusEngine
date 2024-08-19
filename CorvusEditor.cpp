@@ -8,6 +8,29 @@
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
 
+#define MAX_LIGHTS 1
+
+struct PointLight
+{
+    DirectX::XMFLOAT3 Position;
+    float Padding1 = 0.0f;
+    // 16 bytes boundary 
+    DirectX::XMFLOAT4 Color = { 1.0, 0.0, 0.0, 1.0 };
+    // 16 bytes boundary 
+    float ConstantAttenuation = 1.0f;
+    float LinearAttenuation = 0.3f;
+    float QuadraticAttenuation = 0.2f;
+    float Padding3;
+    // 16 bytes boundary
+    int Enabled = true;
+    float Padding4[3];
+};
+
+struct PointLightsConstantBuffer
+{
+    PointLight PointLights[MAX_LIGHTS];
+};
+
 struct SceneConstantBuffer
 {
     DirectX::XMFLOAT4X4 ViewProj;
@@ -73,6 +96,9 @@ CorvusEditor::CorvusEditor()
     
     m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     m_renderer->CreateConstantBuffer(m_constantBuffer);
+
+    m_lightsConstantBuffer = m_renderer->CreateBuffer(256 * 2, 0, BufferType::Constant, false);
+    m_renderer->CreateConstantBuffer(m_lightsConstantBuffer);
 
     auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
         float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f)
@@ -204,6 +230,21 @@ void CorvusEditor::Run()
         memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
         m_constantBuffer->Unmap(0, 0);
 
+        // TODO point lights 
+        
+        PointLight testLight = {};
+        testLight.Position = { 0.0f, 0.0f, 3.0f };
+        
+        PointLightsConstantBuffer lightsCbuf;
+        lightsCbuf.PointLights[0] = testLight;
+
+        void* data2;
+        m_lightsConstantBuffer->Map(0, 0, &data2);
+        memcpy(data2, &lightsCbuf, sizeof(PointLightsConstantBuffer));
+        m_lightsConstantBuffer->Unmap(0, 0);
+
+        // TODO point lights 
+
         commandList->Begin();
         commandList->ImageBarrier(texture, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -217,6 +258,7 @@ void CorvusEditor::Run()
         commandList->BindGraphicsPipeline(m_trianglePipeline);
         
         commandList->BindConstantBuffer(m_constantBuffer, 0);
+        commandList->BindConstantBuffer(m_lightsConstantBuffer, 5);
         
         commandList->BindGraphicsSampler(m_textureSampler, 2);
 
@@ -262,8 +304,8 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
-        static const char* modes[] = { "Default", "Diffuse", "Specular", "Albedo", "Normal" };
-        ImGui::Combo("Mode", (int*)&m_viewMode, modes, 5);
+        static const char* modes[] = { "Default", "Diffuse", "Specular", "Albedo", "Normal", "Debug" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
         ImGui::End();
         
         m_renderer->EndImGuiFrame();

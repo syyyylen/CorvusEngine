@@ -25,21 +25,22 @@ struct VertexIn
 struct VertexOut
 {
     float4 Position : SV_POSITION;
+    float3 PositionWS : TEXCOORD0;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
-    float time : TEXCOORD1;
-    bool HasAlbedo : TEXCOORD2;
-    bool HasNormalMap : TEXCOORD3;
-    float3 CameraPosition : TEXCOORD4;
-    int Mode : TEXCOORD5;
-    row_major float3x3 tbn : TEXCOORD6;
+    float2 uv : TEXCOORD1;
+    float time : TEXCOORD2;
+    bool HasAlbedo : TEXCOORD3;
+    bool HasNormalMap : TEXCOORD4;
+    float3 CameraPosition : TEXCOORD5;
+    int Mode : TEXCOORD6;
+    row_major float3x3 tbn : TEXCOORD7;
 };
 
 VertexOut Main(VertexIn Input)
 {
     VertexOut Output;
-    float4 pos = mul(float4(Input.position, 1.0), World);
-    Output.Position = mul(pos, ViewProj);
+    Output.PositionWS = mul(float4(Input.position, 1.0), World).xyz;
+    Output.Position = mul(float4(Output.PositionWS, 1.0), ViewProj);
     Output.normal = normalize(mul(Input.normal, (float3x3)World));
     Output.uv = Input.texcoord;
     
