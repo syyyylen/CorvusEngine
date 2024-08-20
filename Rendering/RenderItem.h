@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Core.h"
-#include "RHI/D3D12Renderer.h"
+#include "../RHI/D3D12Renderer.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

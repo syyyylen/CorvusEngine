@@ -2,9 +2,10 @@
 #include "Camera.h"
 #include "Core.h"
 #include "InputListener.h"
-#include "RenderItem.h"
+#include "Rendering/RenderItem.h"
 #include "Window.h"
 #include "RHI/D3D12Renderer.h"
+#include "Rendering/RenderPass.h"
 
 class CorvusEditor : public InputListener
 {
@@ -48,7 +49,8 @@ private:
     bool m_mouseLocked = true;
 
     int m_viewMode;
-    
+
+    std::shared_ptr<RenderPass> m_forwardPass;
     std::vector<std::shared_ptr<RenderItem>> m_renderItems;
 
     // TODO debug

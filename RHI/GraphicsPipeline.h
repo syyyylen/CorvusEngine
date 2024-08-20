@@ -2,7 +2,7 @@
 #include <Core.h>
 
 #include "Texture.h"
-#include "../ShaderCompiler.h"
+#include "../Rendering/ShaderCompiler.h"
 
 enum class FillMode
 {

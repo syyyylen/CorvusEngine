@@ -4,49 +4,12 @@
 
 #include "Image.h"
 #include "InputSystem.h"
-#include "ShaderCompiler.h"
+#include "Rendering/ForwardRenderPass.h"
+#include "Rendering/ShaderCompiler.h"
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
-
-#define MAX_LIGHTS 1
-
-struct PointLight
-{
-    DirectX::XMFLOAT3 Position;
-    float Padding1 = 0.0f;
-    // 16 bytes boundary 
-    DirectX::XMFLOAT4 Color = { 1.0, 1.0, 1.0, 1.0 };
-    // 16 bytes boundary 
-    float ConstantAttenuation = 1.0f;
-    float LinearAttenuation = 0.2f;
-    float QuadraticAttenuation = 0.1f;
-    float Padding3;
-    // 16 bytes boundary
-    int Enabled = true;
-    float Padding4[3];
-};
-
-struct PointLightsConstantBuffer
-{
-    PointLight PointLights[MAX_LIGHTS];
-};
-
-struct SceneConstantBuffer
-{
-    DirectX::XMFLOAT4X4 ViewProj;
-    float Time;
-    DirectX::XMFLOAT3 CameraPosition;
-    int Mode;
-};
-
-struct ObjectConstantBuffer
-{
-    DirectX::XMFLOAT4X4 World;
-    int HasAlbedo = false;
-    int HasNormalMap = false;
-    int Padding1;
-    int Padding2;
-};
+#include "Rendering/RenderingLayouts.h"
+#include "RHI/D3D12Renderer.h"
 
 CorvusEditor::CorvusEditor()
 {
@@ -62,7 +25,10 @@ CorvusEditor::CorvusEditor()
         m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, aspectRatio);
     };
 
-    m_window = std::make_shared<Window>(1380, 960, L"Corvus Editor");
+    int defaultWidth = 1380;
+    int defaultHeight = 960;
+
+    m_window = std::make_shared<Window>(defaultWidth, defaultHeight, L"Corvus Editor");
     m_window->DefineOnResize([this, updateProjMatrix](int width, int height)
     {
         LOG(Debug, "Window resize !");
@@ -76,29 +42,11 @@ CorvusEditor::CorvusEditor()
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
-    m_textureSampler = m_renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
-
-    m_depthBuffer = m_renderer->CreateTexture(1380, 960, TextureFormat::R32Depth, TextureType::DepthTarget);
+    m_depthBuffer = m_renderer->CreateTexture(defaultWidth, defaultHeight, TextureFormat::R32Depth, TextureType::DepthTarget);
     m_renderer->CreateDepthView(m_depthBuffer);
 
-    GraphicsPipelineSpecs specs;
-    specs.FormatCount = 1;
-    specs.Formats[0] = TextureFormat::RGBA8;
-    specs.DepthEnabled = true;
-    specs.Depth = DepthOperation::Less;
-    specs.DepthFormat = TextureFormat::R32Depth;
-    specs.Cull = CullMode::None;
-    specs.Fill = FillMode::Solid;
-    ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
-    ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
-
-    m_trianglePipeline = m_renderer->CreateGraphicsPipeline(specs);
-    
-    m_constantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    m_renderer->CreateConstantBuffer(m_constantBuffer);
-
-    m_lightsConstantBuffer = m_renderer->CreateBuffer(256 * 2, 0, BufferType::Constant, false);
-    m_renderer->CreateConstantBuffer(m_lightsConstantBuffer);
+    m_forwardPass = std::make_shared<ForwardRenderPass>();
+    m_forwardPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
         float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f)
@@ -200,9 +148,6 @@ void CorvusEditor::Run()
         uint32_t width, height;
         m_window->GetSize(width, height);
 
-        auto commandList = m_renderer->GetCurrentCommandList();
-        auto texture = m_renderer->GetBackBuffer();
-
         if(m_fov != m_previousFov)
         {
             m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, (float)width / (float)height);
@@ -214,77 +159,35 @@ void CorvusEditor::Run()
 
         m_camera.UpdateViewMatrix();
 
-        auto view = m_camera.GetViewMatrix();
-        auto proj = m_camera.GetProjMatrix();
-
-        DirectX::XMMATRIX viewProj = view * proj;
-
-        SceneConstantBuffer cbuf;
-        cbuf.Time = m_elapsedTime;
-        cbuf.CameraPosition = m_camera.GetPosition();
-        cbuf.Mode = m_viewMode;
-        DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
-        
-        void* data;
-        m_constantBuffer->Map(0, 0, &data);
-        memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
-        m_constantBuffer->Unmap(0, 0);
-
         // TODO point lights & proper game object inspector
-        
         PointLight testLight = {};
         testLight.Position = m_lightPosition;
         testLight.ConstantAttenuation = m_lightConstantAttenuation;
         testLight.LinearAttenuation = m_lightLinearAttenuation;
         testLight.QuadraticAttenuation = m_lightQuadraticAttenuation;
         testLight.Color = m_lightColor;
+        // TODO point lights & proper game object inspector
+
+        std::vector<PointLight> pointLights;
+        pointLights.emplace_back(testLight);
+
+        GlobalPassData passData = {};
+        passData.DeltaTime = dt;
+        passData.ElapsedTime = m_elapsedTime;
+        passData.ViewMode = m_viewMode;
+        passData.PointLights = pointLights;
+
+        auto commandList = m_renderer->GetCurrentCommandList();
+        auto backbuffer = m_renderer->GetBackBuffer();
         
-        PointLightsConstantBuffer lightsCbuf;
-        lightsCbuf.PointLights[0] = testLight;
-
-        void* data2;
-        m_lightsConstantBuffer->Map(0, 0, &data2);
-        memcpy(data2, &lightsCbuf, sizeof(PointLightsConstantBuffer));
-        m_lightsConstantBuffer->Unmap(0, 0);
-
-        // TODO point lights 
-
         commandList->Begin();
-        commandList->ImageBarrier(texture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
+        commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
         commandList->SetViewport(0, 0, width, height);
-        commandList->SetTopology(Topology::TriangleList);
-
-        commandList->BindRenderTargets({ texture }, m_depthBuffer);
-        commandList->ClearRenderTarget(texture, 0.0f, 0.0f, 0.0f, 1.0f);
+        commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
+        commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
         commandList->ClearDepthTarget(m_depthBuffer);
         
-        commandList->BindGraphicsPipeline(m_trianglePipeline);
-        
-        commandList->BindConstantBuffer(m_constantBuffer, 0);
-        commandList->BindConstantBuffer(m_lightsConstantBuffer, 5);
-        
-        commandList->BindGraphicsSampler(m_textureSampler, 2);
-
-        for(const auto renderItem : m_renderItems)
-        {
-            auto& material = renderItem->GetMaterial();
-
-            if(material.HasAlbedo)
-                commandList->BindGraphicsShaderResource(material.Albedo, 3);
-
-            if(material.HasNormal)
-                commandList->BindGraphicsShaderResource(material.Normal, 4);
-            
-            const auto primitives = renderItem->GetPrimitives();
-            for(const auto& primitive : primitives)
-            {
-                commandList->BindConstantBuffer(primitive.m_objectConstantBuffer, 1);
-                commandList->BindVertexBuffer(primitive.m_vertexBuffer);
-                commandList->BindIndexBuffer(primitive.m_indicesBuffer);
-                commandList->DrawIndexed(primitive.m_indexCount);
-            }
-        }
+        m_forwardPass->Pass(m_renderer, passData, m_camera, m_renderItems);
 
         m_renderer->BeginImGuiFrame();
 
@@ -331,7 +234,7 @@ void CorvusEditor::Run()
         
         m_renderer->EndImGuiFrame();
 
-        commandList->ImageBarrier(texture, D3D12_RESOURCE_STATE_PRESENT);
+        commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_PRESENT);
         commandList->End();
         m_renderer->ExecuteCommandBuffers({ commandList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
 
