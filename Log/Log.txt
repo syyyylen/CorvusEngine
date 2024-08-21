@@ -1,6 +1,6 @@
 [Debug] Hello There !
 [Debug] Starting Corvus Editor
-[Debug] Device : Using GPU : AMD Radeon RX 7900 XT
+[Debug] Device : Using GPU : NVIDIA GeForce RTX 4060 Ti
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 512
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 8192
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 1024
@@ -8,6 +8,9 @@
 [Debug] Allocator created !
 [Debug] Swap Chain created !
 [Debug] Renderer Initialization Completed
+[Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
+[Debug] ShaderCompiler : compiled : Shaders/SimplePixel.hlsl
+[Debug] GraphicsPipeline: Created a Graphics Pipeline !
 [Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
 [Debug] ShaderCompiler : compiled : Shaders/SimplePixel.hlsl
 [Debug] GraphicsPipeline: Created a Graphics Pipeline !

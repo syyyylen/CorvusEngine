@@ -8,7 +8,7 @@ public:
     void Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems) override;
 
 private:
-    std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
+    std::shared_ptr<GraphicsPipeline> m_forwardPipeline;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<Buffer> m_lightsConstantBuffer;
     std::shared_ptr<Sampler> m_textureSampler;

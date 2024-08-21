@@ -143,11 +143,17 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     Desc.VS.BytecodeLength = vertexBytecode.Bytecode.size() * sizeof(uint32_t);
     Desc.PS.pShaderBytecode = fragmentBytecode.Bytecode.data();
     Desc.PS.BytecodeLength = fragmentBytecode.Bytecode.size() * sizeof(uint32_t);
-    
+
     for (int RTVIndex = 0; RTVIndex < specs.FormatCount; RTVIndex++)
     {
-        Desc.BlendState.RenderTarget[RTVIndex].SrcBlend = D3D12_BLEND_ONE;
-        Desc.BlendState.RenderTarget[RTVIndex].DestBlend = D3D12_BLEND_ZERO;
+        if(specs.TransparencyEnabled)
+        {
+            Desc.BlendState.RenderTarget[RTVIndex].BlendEnable = true;
+            Desc.BlendState.RenderTarget[RTVIndex].LogicOpEnable = false;
+        }
+            
+        Desc.BlendState.RenderTarget[RTVIndex].SrcBlend = specs.TransparencyEnabled ? D3D12_BLEND_SRC_ALPHA : D3D12_BLEND_ONE;
+        Desc.BlendState.RenderTarget[RTVIndex].DestBlend = specs.TransparencyEnabled ? D3D12_BLEND_INV_SRC_ALPHA : D3D12_BLEND_ZERO;
         Desc.BlendState.RenderTarget[RTVIndex].BlendOp = D3D12_BLEND_OP_ADD;
         Desc.BlendState.RenderTarget[RTVIndex].SrcBlendAlpha = D3D12_BLEND_ONE;
         Desc.BlendState.RenderTarget[RTVIndex].DestBlendAlpha = D3D12_BLEND_ZERO;

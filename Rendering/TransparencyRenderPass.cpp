@@ -1,6 +1,6 @@
-﻿#include "ForwardRenderPass.h"
+﻿#include "TransparencyRenderPass.h"
 
-void ForwardRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
+void TransparencyRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
 {
     m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
@@ -12,20 +12,17 @@ void ForwardRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int 
     specs.DepthFormat = TextureFormat::R32Depth;
     specs.Cull = CullMode::Back;
     specs.Fill = FillMode::Solid;
-    specs.TransparencyEnabled = false;
+    specs.TransparencyEnabled = true;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 
-    m_forwardPipeline = renderer->CreateGraphicsPipeline(specs);
+    m_forwardTransparencyPipeline = renderer->CreateGraphicsPipeline(specs);
     
     m_constantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_constantBuffer);
-
-    m_lightsConstantBuffer = renderer->CreateBuffer(256 * 2, 0, BufferType::Constant, false);
-    renderer->CreateConstantBuffer(m_lightsConstantBuffer);
 }
 
-void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
+void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
 {
     auto view = camera.GetViewMatrix();
     auto proj = camera.GetProjMatrix();
@@ -43,27 +40,11 @@ void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glob
     memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
     m_constantBuffer->Unmap(0, 0);
 
-    PointLightsConstantBuffer lightsCbuf;
-    for(int i = 0; i < globalPassData.PointLights.size(); i++)
-    {
-        if(i < MAX_LIGHTS)
-            lightsCbuf.PointLights[i] = globalPassData.PointLights[i];
-    }
-
-    void* data2;
-    m_lightsConstantBuffer->Map(0, 0, &data2);
-    memcpy(data2, &lightsCbuf, sizeof(PointLightsConstantBuffer));
-    m_lightsConstantBuffer->Unmap(0, 0);
-
     auto commandList = renderer->GetCurrentCommandList();
     
     commandList->SetTopology(Topology::TriangleList);
-
-    commandList->BindGraphicsPipeline(m_forwardPipeline);
-        
+    commandList->BindGraphicsPipeline(m_forwardTransparencyPipeline);
     commandList->BindConstantBuffer(m_constantBuffer, 0);
-    commandList->BindConstantBuffer(m_lightsConstantBuffer, 5);
-        
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 
     for(const auto renderItem : renderItems)

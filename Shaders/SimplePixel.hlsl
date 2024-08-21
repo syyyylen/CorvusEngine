@@ -114,7 +114,7 @@ float4 Main(PixelIn Input) : SV_TARGET
     switch (Input.Mode)
     {
     case 0:
-        return albedo * float4(finalLight, 1.0);
+        return albedo * float4(finalLight, 0.5);
     case 1:
         return albedo * float4(dirDiffuse, 1.0);
     case 2:

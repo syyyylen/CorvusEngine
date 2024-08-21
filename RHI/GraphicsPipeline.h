@@ -36,6 +36,7 @@ struct GraphicsPipelineSpecs
     int FormatCount;
     TextureFormat DepthFormat;
     bool DepthEnabled;
+    bool TransparencyEnabled;
 
     std::unordered_map<ShaderType, Shader> ShadersBytecodes;
 };

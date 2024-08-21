@@ -9,6 +9,7 @@
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
 #include "Rendering/RenderingLayouts.h"
+#include "Rendering/TransparencyRenderPass.h"
 #include "RHI/D3D12Renderer.h"
 
 CorvusEditor::CorvusEditor()
@@ -48,8 +49,11 @@ CorvusEditor::CorvusEditor()
     m_forwardPass = std::make_shared<ForwardRenderPass>();
     m_forwardPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
+    m_transparencyPass = std::make_shared<TransparencyRenderPass>();
+    m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
     auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
-        float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f)
+        float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f, bool transparent = false)
     {
         auto model = std::make_shared<RenderItem>();
         model->ImportMesh(m_renderer, modelPath);
@@ -102,12 +106,12 @@ CorvusEditor::CorvusEditor()
         memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
         model->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
 
-        m_renderItems.push_back(model);
+        transparent ? m_transparentRenderItems.push_back(model) : m_opaqueRenderItems.push_back(model);
     };
 
     addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 0.0f, 90.0f);
     addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0);
-    addModel("Assets/sphere.gltf", "", "", 6.0f);
+    addModel("Assets/sphere.gltf", "", "", 6.0f, 0.0f, 0.0f, 1.0f, true);
     addModel("Assets/dragon.obj", "", "", 38.0f, -4.0f, 0.0f, 0.25f);
     
     m_startTime = clock();
@@ -187,7 +191,8 @@ void CorvusEditor::Run()
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
         commandList->ClearDepthTarget(m_depthBuffer);
         
-        m_forwardPass->Pass(m_renderer, passData, m_camera, m_renderItems);
+        m_forwardPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
+        m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
 
         m_renderer->BeginImGuiFrame();
 

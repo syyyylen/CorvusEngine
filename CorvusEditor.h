@@ -51,7 +51,9 @@ private:
     int m_viewMode;
 
     std::shared_ptr<RenderPass> m_forwardPass;
-    std::vector<std::shared_ptr<RenderItem>> m_renderItems;
+    std::shared_ptr<RenderPass> m_transparencyPass;
+    std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
+    std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
 
     // TODO debug
     DirectX::XMFLOAT3 m_lightPosition = { 0.0f, 0.0f, -3.0f };
