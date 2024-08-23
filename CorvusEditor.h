@@ -50,6 +50,7 @@ private:
 
     int m_viewMode;
 
+    std::shared_ptr<RenderPass> m_deferredPass;
     std::shared_ptr<RenderPass> m_forwardPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;

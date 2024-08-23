@@ -1,6 +1,6 @@
 [Debug] Hello There !
 [Debug] Starting Corvus Editor
-[Debug] Device : Using GPU : NVIDIA GeForce RTX 4060 Ti
+[Debug] Device : Using GPU : AMD Radeon RX 7900 XT
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 512
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 8192
 [Debug] DescriptorHeap : allocated a descriptor heap of size : 1024
@@ -13,6 +13,9 @@
 [Debug] GraphicsPipeline: Created a Graphics Pipeline !
 [Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
 [Debug] ShaderCompiler : compiled : Shaders/SimplePixel.hlsl
+[Debug] GraphicsPipeline: Created a Graphics Pipeline !
+[Debug] ShaderCompiler : compiled : Shaders/SimpleVertex.hlsl
+[Debug] ShaderCompiler : compiled : Shaders/DeferredGBufferPixel.hlsl
 [Debug] GraphicsPipeline: Created a Graphics Pipeline !
 [Debug] RenderItem : Imported mesh Assets/DamagedHelmet.gltf
 [Debug] Image : Loaded image Assets/DamagedHelmet_albedo.jpg

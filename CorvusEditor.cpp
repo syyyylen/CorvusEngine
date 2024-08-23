@@ -4,6 +4,7 @@
 
 #include "Image.h"
 #include "InputSystem.h"
+#include "Rendering/DeferredRenderPass.h"
 #include "Rendering/ForwardRenderPass.h"
 #include "Rendering/ShaderCompiler.h"
 #include "RHI/Buffer.h"
@@ -51,6 +52,9 @@ CorvusEditor::CorvusEditor()
 
     m_transparencyPass = std::make_shared<TransparencyRenderPass>();
     m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
+    m_deferredPass = std::make_shared<DeferredRenderPass>();
+    m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
         float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f, bool transparent = false)
@@ -190,6 +194,10 @@ void CorvusEditor::Run()
         commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
         commandList->ClearDepthTarget(m_depthBuffer);
+
+        m_deferredPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
+
+        commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
         
         m_forwardPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
         m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
@@ -235,6 +243,13 @@ void CorvusEditor::Run()
         m_lightColor.y = color[1];
         m_lightColor.z = color[2];
         m_lightColor.w = color[3];
+        ImGui::End();
+
+        auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();
+
+        ImGui::Begin("Debug GBuffer");
+        ImGui::Image((ImTextureID)GBuffer.m_albedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+        ImGui::Image((ImTextureID)GBuffer.m_normalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::End();
         
         m_renderer->EndImGuiFrame();

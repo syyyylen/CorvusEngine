@@ -148,6 +148,11 @@ void D3D12Renderer::CreateShaderResourceView(std::shared_ptr<Texture> texture)
     texture->CreateShaderResource(m_heaps.ShaderHeap);
 }
 
+void D3D12Renderer::CreateRenderTargetView(std::shared_ptr<Texture> texture)
+{
+    texture->CreateRenderTarget(m_heaps.RtvHeap);
+}
+
 Uploader D3D12Renderer::CreateUploader()
 {
     return Uploader(m_device, m_heaps, m_allocator);
