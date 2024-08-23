@@ -19,19 +19,22 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
 
     m_deferredPipeline = renderer->CreateGraphicsPipeline(specs);
 
-    m_depthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
-    renderer->CreateDepthView(m_depthBuffer);
+    m_GBuffer.DepthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
+    renderer->CreateDepthView(m_GBuffer.DepthBuffer);
+    m_GBuffer.DepthBuffer->SetFormat(TextureFormat::R32Float);
+    renderer->CreateShaderResourceView(m_GBuffer.DepthBuffer);
+    m_GBuffer.DepthBuffer->SetFormat(TextureFormat::R32Depth);
     
     m_constantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_constantBuffer);
 
-    m_GBuffer.m_albedoRenderTarget = renderer->CreateTexture(width, height, TextureFormat::R11G11B10Float, TextureType::RenderTarget);
-    renderer->CreateRenderTargetView(m_GBuffer.m_albedoRenderTarget);
-    renderer->CreateShaderResourceView(m_GBuffer.m_albedoRenderTarget);
+    m_GBuffer.AlbedoRenderTarget = renderer->CreateTexture(width, height, TextureFormat::R11G11B10Float, TextureType::RenderTarget);
+    renderer->CreateRenderTargetView(m_GBuffer.AlbedoRenderTarget);
+    renderer->CreateShaderResourceView(m_GBuffer.AlbedoRenderTarget);
 
-    m_GBuffer.m_normalRenderTarget = renderer->CreateTexture(width, height, TextureFormat::RGBA8SNorm, TextureType::RenderTarget);
-    renderer->CreateRenderTargetView(m_GBuffer.m_normalRenderTarget);
-    renderer->CreateShaderResourceView(m_GBuffer.m_normalRenderTarget);
+    m_GBuffer.NormalRenderTarget = renderer->CreateTexture(width, height, TextureFormat::RGBA8SNorm, TextureType::RenderTarget);
+    renderer->CreateRenderTargetView(m_GBuffer.NormalRenderTarget);
+    renderer->CreateShaderResourceView(m_GBuffer.NormalRenderTarget);
 
     // TODO : resize render targets !
 }
@@ -56,14 +59,15 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     
     auto commandList = renderer->GetCurrentCommandList();
 
-    commandList->ImageBarrier(m_GBuffer.m_albedoRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    commandList->ImageBarrier(m_GBuffer.m_normalRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-    commandList->ClearRenderTarget(m_GBuffer.m_albedoRenderTarget, 0.0f, 0.0f, 0.0f, 0.0f);
-    commandList->ClearRenderTarget(m_GBuffer.m_normalRenderTarget, 0.0f, 0.0f, 0.0f, 0.0f);
-    commandList->ClearDepthTarget(m_depthBuffer);
+    commandList->ClearRenderTarget(m_GBuffer.AlbedoRenderTarget, 0.0f, 0.0f, 0.0f, 0.0f);
+    commandList->ClearRenderTarget(m_GBuffer.NormalRenderTarget, 0.0f, 0.0f, 0.0f, 0.0f);
+    commandList->ClearDepthTarget(m_GBuffer.DepthBuffer);
 
-    commandList->BindRenderTargets({ m_GBuffer.m_albedoRenderTarget, m_GBuffer.m_normalRenderTarget }, m_depthBuffer);
+    commandList->BindRenderTargets({ m_GBuffer.AlbedoRenderTarget, m_GBuffer.NormalRenderTarget }, m_GBuffer.DepthBuffer);
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredPipeline);
@@ -90,6 +94,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         }
     }
 
-    commandList->ImageBarrier(m_GBuffer.m_albedoRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
-    commandList->ImageBarrier(m_GBuffer.m_normalRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
+    commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
+    commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
+    commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
 }

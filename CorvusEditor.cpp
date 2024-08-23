@@ -248,8 +248,9 @@ void CorvusEditor::Run()
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();
 
         ImGui::Begin("Debug GBuffer");
-        ImGui::Image((ImTextureID)GBuffer.m_albedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-        ImGui::Image((ImTextureID)GBuffer.m_normalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+        ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+        ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+        ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::End();
         
         m_renderer->EndImGuiFrame();

@@ -21,7 +21,8 @@ enum class TextureFormat
     RGBA16Float = DXGI_FORMAT_R16G16B16A16_FLOAT,
     R32Depth = DXGI_FORMAT_D32_FLOAT,
     R11G11B10Float = DXGI_FORMAT_R11G11B10_FLOAT,
-    RGBA8SNorm = DXGI_FORMAT_R8G8B8A8_SNORM
+    RGBA8SNorm = DXGI_FORMAT_R8G8B8A8_SNORM,
+    R32Float = DXGI_FORMAT_R32_FLOAT 
 };
 
 class Texture 
@@ -40,6 +41,7 @@ public:
     D3D12_RESOURCE_STATES GetState() { return m_state; }
     GPUResource& GetResource() { return m_resource; }
     TextureFormat GetFormat() { return m_format; }
+    void SetFormat(TextureFormat format) { m_format = format; }
 
     DescriptorHandle m_rtv;
     DescriptorHandle m_dsv;

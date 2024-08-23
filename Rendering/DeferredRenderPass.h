@@ -3,8 +3,9 @@
 
 struct GBuffer
 {
-    std::shared_ptr<Texture> m_albedoRenderTarget;
-    std::shared_ptr<Texture> m_normalRenderTarget;
+    std::shared_ptr<Texture> AlbedoRenderTarget;
+    std::shared_ptr<Texture> NormalRenderTarget;
+    std::shared_ptr<Texture> DepthBuffer;
 };
 
 class DeferredRenderPass : public RenderPass
@@ -19,6 +20,5 @@ private:
     std::shared_ptr<GraphicsPipeline> m_deferredPipeline;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
-    std::shared_ptr<Texture> m_depthBuffer;
     GBuffer m_GBuffer;
 };
