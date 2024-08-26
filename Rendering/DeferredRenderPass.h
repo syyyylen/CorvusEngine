@@ -22,7 +22,6 @@ private:
     std::shared_ptr<GraphicsPipeline> m_deferredLightingPipeline;
     std::shared_ptr<Buffer> m_geometryConstantBuffer;
     std::shared_ptr<Buffer> m_lightingConstantBuffer;
-    std::shared_ptr<Buffer> m_lightsConstantBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_screenQuadVertexBuffer;
     

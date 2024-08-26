@@ -47,6 +47,9 @@ private:
     float m_moveSpeed = 6.5f;
     bool m_mouseLocked = true;
 
+    float m_dirLightDirection[3] = { 1.0f, 1.0f, 0.0f };
+    float m_dirLightIntensity = 1.0;
+
     int m_viewMode;
 
     std::shared_ptr<RenderPass> m_deferredPass;
@@ -54,12 +57,4 @@ private:
     std::shared_ptr<RenderPass> m_transparencyPass;
     std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
     std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
-
-    // TODO debug
-    DirectX::XMFLOAT3 m_lightPosition = { 0.0f, 0.0f, -3.0f };
-    DirectX::XMFLOAT4 m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float m_lightQuadraticAttenuation = 0.1f;
-    float m_lightConstantAttenuation = 0.2f;
-    float m_lightLinearAttenuation = 1.0f;
-    // TODO debug
 };

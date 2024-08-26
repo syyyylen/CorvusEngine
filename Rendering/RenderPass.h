@@ -3,12 +3,19 @@
 #include "RenderingLayouts.h"
 #include "RenderItem.h"
 
+struct DirectionalLightInfo
+{
+    DirectX::XMFLOAT3 Direction = { 1.0, 1.0, 0.0 };
+    float Intensity = 1.0f;
+};
+
 struct GlobalPassData
 {
     float DeltaTime;
     float ElapsedTime;
     int ViewMode;
     std::vector<PointLight> PointLights;
+    DirectionalLightInfo DirectionalInfo;
 };
 
 class RenderPass

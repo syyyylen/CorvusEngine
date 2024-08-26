@@ -27,9 +27,14 @@ struct PointLightsConstantBuffer
 struct SceneConstantBuffer
 {
     DirectX::XMFLOAT4X4 ViewProj; // Stores InvViewProj in Deferred PS case (retrieve pos from depth)
+    // 16 bytes boundary
     float Time;
     DirectX::XMFLOAT3 CameraPosition;
+    // 16 bytes boundary
     int Mode;
+    DirectX::XMFLOAT3 DirLightDirection;
+    // 16 bytes boundary
+    float DirLightIntensity;
 };
 
 struct ObjectConstantBuffer

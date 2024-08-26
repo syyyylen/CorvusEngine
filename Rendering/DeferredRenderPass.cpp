@@ -37,9 +37,6 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     m_lightingConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_lightingConstantBuffer);
 
-    m_lightsConstantBuffer = renderer->CreateBuffer(256 * 2, 0, BufferType::Constant, false);
-    renderer->CreateConstantBuffer(m_lightsConstantBuffer);
-
     OnResize(renderer, width, height);
 
     ScreenQuadVertex quadVerts[] =
@@ -89,6 +86,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     cbuf.Time = globalPassData.ElapsedTime;
     cbuf.CameraPosition = camera.GetPosition();
     cbuf.Mode = globalPassData.ViewMode;
+    cbuf.DirLightDirection = globalPassData.DirectionalInfo.Direction;
+    cbuf.DirLightIntensity = globalPassData.DirectionalInfo.Intensity;
     DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
         
     void* data;
@@ -138,29 +137,12 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
 
     auto invViewProj = camera.GetInvViewProjMatrix();
-    
-    SceneConstantBuffer lightingCbuf;
-    lightingCbuf.Time = globalPassData.ElapsedTime;
-    lightingCbuf.CameraPosition = camera.GetPosition();
-    lightingCbuf.Mode = globalPassData.ViewMode;
-    DirectX::XMStoreFloat4x4(&lightingCbuf.ViewProj, DirectX::XMMatrixTranspose(invViewProj));
+    DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(invViewProj));
         
     void* data2;
     m_lightingConstantBuffer->Map(0, 0, &data2);
-    memcpy(data2, &lightingCbuf, sizeof(SceneConstantBuffer));
+    memcpy(data2, &cbuf, sizeof(SceneConstantBuffer));
     m_lightingConstantBuffer->Unmap(0, 0);
-
-    PointLightsConstantBuffer lightsCbuf;
-    for(int i = 0; i < globalPassData.PointLights.size(); i++)
-    {
-        if(i < MAX_LIGHTS)
-            lightsCbuf.PointLights[i] = globalPassData.PointLights[i];
-    }
-
-    void* data3;
-    m_lightsConstantBuffer->Map(0, 0, &data3);
-    memcpy(data3, &lightsCbuf, sizeof(PointLightsConstantBuffer));
-    m_lightsConstantBuffer->Unmap(0, 0);
 
     auto backbuffer = renderer->GetBackBuffer();
     commandList->BindRenderTargets({ backbuffer }, nullptr);
@@ -171,7 +153,6 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
-    commandList->BindConstantBuffer(m_lightsConstantBuffer, 5);
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
 }

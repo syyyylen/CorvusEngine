@@ -160,23 +160,15 @@ void CorvusEditor::Run()
         m_camera.UpdateViewMatrix();
         m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
         
-        // TODO point lights & proper game object inspector
-        PointLight testLight = {};
-        testLight.Position = m_lightPosition;
-        testLight.ConstantAttenuation = m_lightConstantAttenuation;
-        testLight.LinearAttenuation = m_lightLinearAttenuation;
-        testLight.QuadraticAttenuation = m_lightQuadraticAttenuation;
-        testLight.Color = m_lightColor;
-        // TODO point lights & proper game object inspector
-
         std::vector<PointLight> pointLights;
-        pointLights.emplace_back(testLight);
 
         GlobalPassData passData = {};
         passData.DeltaTime = dt;
         passData.ElapsedTime = m_elapsedTime;
         passData.ViewMode = m_viewMode;
         passData.PointLights = pointLights;
+        passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
+        passData.DirectionalInfo.Intensity = m_dirLightIntensity;
 
         auto commandList = m_renderer->GetCurrentCommandList();
         auto backbuffer = m_renderer->GetBackBuffer();
@@ -214,27 +206,12 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "PointLights" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 5);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 4);
+        ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
+        ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 1.0f);
         ImGui::End();
 
-        ImGui::Begin("Debug Point Light");
-        float pos[3] = { m_lightPosition.x, m_lightPosition.y, m_lightPosition.z };
-        ImGui::InputFloat3("Position", pos);
-        m_lightPosition.x = pos[0];
-        m_lightPosition.y = pos[1];
-        m_lightPosition.z = pos[2];
-        ImGui::SliderFloat("C Attenuation", &m_lightConstantAttenuation, 0.0f, 1.0f);
-        ImGui::SliderFloat("L Attenuation", &m_lightLinearAttenuation, 0.0f, 1.0f);
-        ImGui::SliderFloat("Q Attenuation", &m_lightQuadraticAttenuation, 0.0f, 1.0f);
-        float color[4] = { m_lightColor.x, m_lightColor.y, m_lightColor.z, m_lightColor.w };
-        ImGui::ColorEdit4("Color", color);
-        m_lightColor.x = color[0];
-        m_lightColor.y = color[1];
-        m_lightColor.z = color[2];
-        m_lightColor.w = color[3];
-        ImGui::End();
-        
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();
         
         ImGui::Begin("Debug GBuffer");
