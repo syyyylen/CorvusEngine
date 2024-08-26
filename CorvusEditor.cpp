@@ -214,8 +214,8 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 4);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "PointLights" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 5);
         ImGui::End();
 
         ImGui::Begin("Debug Point Light");
