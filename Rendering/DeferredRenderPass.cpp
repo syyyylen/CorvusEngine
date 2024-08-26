@@ -4,20 +4,32 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
 {
     m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
-    GraphicsPipelineSpecs specs;
-    specs.FormatCount = 2;
-    specs.Formats[0] = TextureFormat::R11G11B10Float;
-    specs.Formats[1] = TextureFormat::RGBA8SNorm;
-    specs.DepthEnabled = true;
-    specs.Depth = DepthOperation::Less;
-    specs.DepthFormat = TextureFormat::R32Depth;
-    specs.Cull = CullMode::Back;
-    specs.Fill = FillMode::Solid;
-    specs.TransparencyEnabled = false;
-    ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
-    ShaderCompiler::CompileShader("Shaders/DeferredGBufferPixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
+    GraphicsPipelineSpecs geomSpecs;
+    geomSpecs.FormatCount = 2;
+    geomSpecs.Formats[0] = TextureFormat::R11G11B10Float;
+    geomSpecs.Formats[1] = TextureFormat::RGBA8SNorm;
+    geomSpecs.DepthEnabled = true;
+    geomSpecs.Depth = DepthOperation::Less;
+    geomSpecs.DepthFormat = TextureFormat::R32Depth;
+    geomSpecs.Cull = CullMode::Back;
+    geomSpecs.Fill = FillMode::Solid;
+    geomSpecs.TransparencyEnabled = false;
+    ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, geomSpecs.ShadersBytecodes[ShaderType::Vertex]);
+    ShaderCompiler::CompileShader("Shaders/DeferredGBufferPixel.hlsl", ShaderType::Pixel, geomSpecs.ShadersBytecodes[ShaderType::Pixel]);
 
-    m_deferredPipeline = renderer->CreateGraphicsPipeline(specs);
+    m_deferredGeometryPipeline = renderer->CreateGraphicsPipeline(geomSpecs);
+
+    GraphicsPipelineSpecs lightingSpecs;
+    lightingSpecs.FormatCount = 1;
+    lightingSpecs.Formats[0] = TextureFormat::RGBA8;
+    lightingSpecs.DepthEnabled = false;
+    lightingSpecs.Cull = CullMode::Back;
+    lightingSpecs.Fill = FillMode::Solid;
+    lightingSpecs.TransparencyEnabled = false;
+    ShaderCompiler::CompileShader("Shaders/ScreenQuadVertex.hlsl", ShaderType::Vertex, lightingSpecs.ShadersBytecodes[ShaderType::Vertex]);
+    ShaderCompiler::CompileShader("Shaders/DeferredLightingPixel.hlsl", ShaderType::Pixel, lightingSpecs.ShadersBytecodes[ShaderType::Pixel]);
+
+    m_deferredLightingPipeline = renderer->CreateGraphicsPipeline(lightingSpecs);
 
     m_GBuffer.DepthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
     renderer->CreateDepthView(m_GBuffer.DepthBuffer);
@@ -36,6 +48,23 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     renderer->CreateRenderTargetView(m_GBuffer.NormalRenderTarget);
     renderer->CreateShaderResourceView(m_GBuffer.NormalRenderTarget);
 
+    ScreenQuadVertex quadVerts[] =
+    {
+        { { -1.0f,1.0f, 0.0f,1.0f },{ 0.0f, 0.0f } },
+        { { 1.0f, 1.0f, 0.0f,1.0f }, {1.0f,0.0f } },
+        { { -1.0f, -1.0f, 0.0f,1.0f },{ 0.0f,1.0f } },
+        { { 1.0f, -1.0f, 0.0f,1.0f },{ 1.0f,1.0f } }
+    };
+
+    m_screenQuadVertexBuffer = renderer->CreateBuffer(sizeof(ScreenQuadVertex) * 4, sizeof(ScreenQuadVertex), BufferType::Vertex, false);
+
+    Uploader uploader = renderer->CreateUploader();
+    uploader.CopyHostToDeviceLocal(quadVerts, sizeof(ScreenQuadVertex) * 4, m_screenQuadVertexBuffer);
+    renderer->FlushUploader(uploader);
+}
+
+void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
+{
     // TODO : resize render targets !
 }
 
@@ -70,7 +99,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindRenderTargets({ m_GBuffer.AlbedoRenderTarget, m_GBuffer.NormalRenderTarget }, m_GBuffer.DepthBuffer);
 
     commandList->SetTopology(Topology::TriangleList);
-    commandList->BindGraphicsPipeline(m_deferredPipeline);
+    commandList->BindGraphicsPipeline(m_deferredGeometryPipeline);
     commandList->BindConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 
@@ -97,4 +126,31 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+    return;
+
+    auto invViewProj = camera.GetInvViewProjMatrix();
+    
+    SceneConstantBuffer lightingCbuf;
+    lightingCbuf.Time = globalPassData.ElapsedTime;
+    lightingCbuf.CameraPosition = camera.GetPosition();
+    lightingCbuf.Mode = globalPassData.ViewMode;
+    DirectX::XMStoreFloat4x4(&lightingCbuf.ViewProj, DirectX::XMMatrixTranspose(invViewProj));
+        
+    void* data2;
+    m_constantBuffer->Map(0, 0, &data2);
+    memcpy(data2, &lightingCbuf, sizeof(SceneConstantBuffer));
+    m_constantBuffer->Unmap(0, 0);
+
+    auto backbuffer = renderer->GetBackBuffer();
+    commandList->BindRenderTargets({ backbuffer }, nullptr);
+    commandList->SetTopology(Topology::TriangleStrip);
+    commandList->BindGraphicsPipeline(m_deferredLightingPipeline);
+    // commandList->BindConstantBuffer(m_constantBuffer, 0);
+    // commandList->BindGraphicsSampler(m_textureSampler, 1);
+    // commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
+    // commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
+    // commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
+    commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
+    commandList->Draw(4);
 }

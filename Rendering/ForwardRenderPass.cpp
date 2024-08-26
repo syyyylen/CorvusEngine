@@ -25,6 +25,10 @@ void ForwardRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int 
     renderer->CreateConstantBuffer(m_lightsConstantBuffer);
 }
 
+void ForwardRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
+{
+}
+
 void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
 {
     auto view = camera.GetViewMatrix();

@@ -17,9 +17,19 @@ void TransparencyRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer,
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_forwardTransparencyPipeline = renderer->CreateGraphicsPipeline(specs);
+
+    m_depthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
+    renderer->CreateDepthView(m_depthBuffer);
     
     m_constantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_constantBuffer);
+}
+
+void TransparencyRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
+{
+    m_depthBuffer.reset();
+    m_depthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
+    renderer->CreateDepthView(m_depthBuffer);
 }
 
 void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
@@ -41,9 +51,12 @@ void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const
     m_constantBuffer->Unmap(0, 0);
 
     auto commandList = renderer->GetCurrentCommandList();
+    auto backbuffer = renderer->GetBackBuffer();
     
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_forwardTransparencyPipeline);
+    commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
+    commandList->ClearDepthTarget(m_depthBuffer);
     commandList->BindConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 

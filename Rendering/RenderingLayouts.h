@@ -26,7 +26,7 @@ struct PointLightsConstantBuffer
 
 struct SceneConstantBuffer
 {
-    DirectX::XMFLOAT4X4 ViewProj;
+    DirectX::XMFLOAT4X4 ViewProj; // Stores InvViewProj in Deferred PS case (retrieve pos from depth)
     float Time;
     DirectX::XMFLOAT3 CameraPosition;
     int Mode;
@@ -39,4 +39,10 @@ struct ObjectConstantBuffer
     int HasNormalMap = false;
     int Padding1;
     int Padding2;
+};
+
+struct ScreenQuadVertex
+{
+    DirectX::XMFLOAT4 Position;
+    DirectX::XMFLOAT2 TexCoord;
 };

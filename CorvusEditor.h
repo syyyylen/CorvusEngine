@@ -31,7 +31,6 @@ private:
     std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<Buffer> m_lightsConstantBuffer;
-    std::shared_ptr<Texture> m_depthBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
 
     float m_startTime;

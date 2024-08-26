@@ -168,13 +168,13 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     Desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
     Desc.RasterizerState.FillMode = D3D12_FILL_MODE(specs.Fill);
     Desc.RasterizerState.CullMode = D3D12_CULL_MODE(specs.Cull);
-    Desc.RasterizerState.DepthClipEnable = true;
-    Desc.RasterizerState.FrontCounterClockwise = true;
+    Desc.RasterizerState.FrontCounterClockwise = specs.DepthEnabled;
     Desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    
-    if (specs.DepthEnabled)
+
+    Desc.DepthStencilState.DepthEnable = specs.DepthEnabled;
+    Desc.RasterizerState.DepthClipEnable = specs.DepthEnabled;
+    if(specs.DepthEnabled)
     {
-        Desc.DepthStencilState.DepthEnable = true;
         Desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         Desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC(specs.Depth);
         Desc.DSVFormat = DXGI_FORMAT(specs.DepthFormat);

@@ -35,26 +35,21 @@ CorvusEditor::CorvusEditor()
     {
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
-        m_depthBuffer.reset();
-        m_depthBuffer = m_renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
-        m_renderer->CreateDepthView(m_depthBuffer);
-        
+        m_deferredPass->OnResize(m_renderer, width, height);
+        m_transparencyPass->OnResize(m_renderer, width, height);
         updateProjMatrix((float)width, (float)height);
     });
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
-    m_depthBuffer = m_renderer->CreateTexture(defaultWidth, defaultHeight, TextureFormat::R32Depth, TextureType::DepthTarget);
-    m_renderer->CreateDepthView(m_depthBuffer);
-
-    m_forwardPass = std::make_shared<ForwardRenderPass>();
-    m_forwardPass->Initialize(m_renderer, defaultWidth, defaultHeight);
-
-    m_transparencyPass = std::make_shared<TransparencyRenderPass>();
-    m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+    // m_forwardPass = std::make_shared<ForwardRenderPass>();
+    // m_forwardPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
+    m_transparencyPass = std::make_shared<TransparencyRenderPass>();
+    m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
         float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f, bool transparent = false)
@@ -166,7 +161,8 @@ void CorvusEditor::Run()
         m_camera.Strafe(m_cameraRight * (m_moveSpeed * dt));
 
         m_camera.UpdateViewMatrix();
-
+        m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
+        
         // TODO point lights & proper game object inspector
         PointLight testLight = {};
         testLight.Position = m_lightPosition;
@@ -191,16 +187,15 @@ void CorvusEditor::Run()
         commandList->Begin();
         commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
         commandList->SetViewport(0, 0, width, height);
-        commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
+        commandList->BindRenderTargets({ backbuffer }, nullptr);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
-        commandList->ClearDepthTarget(m_depthBuffer);
 
         m_deferredPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
 
-        commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
-        
-        m_forwardPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
+        // m_forwardPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
         m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
+        
+        commandList->BindRenderTargets({ backbuffer }, nullptr);
 
         m_renderer->BeginImGuiFrame();
 
@@ -244,9 +239,9 @@ void CorvusEditor::Run()
         m_lightColor.z = color[2];
         m_lightColor.w = color[3];
         ImGui::End();
-
+        
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();
-
+        
         ImGui::Begin("Debug GBuffer");
         ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
