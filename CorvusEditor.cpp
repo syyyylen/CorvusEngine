@@ -42,9 +42,6 @@ CorvusEditor::CorvusEditor()
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
-    // m_forwardPass = std::make_shared<ForwardRenderPass>();
-    // m_forwardPass->Initialize(m_renderer, defaultWidth, defaultHeight);
-
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
@@ -191,8 +188,6 @@ void CorvusEditor::Run()
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
 
         m_deferredPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
-
-        // m_forwardPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
         m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
         
         commandList->BindRenderTargets({ backbuffer }, nullptr);
@@ -253,6 +248,8 @@ void CorvusEditor::Run()
         commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_PRESENT);
         commandList->End();
         m_renderer->ExecuteCommandBuffers({ commandList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+        // m_renderer->WaitForGPU();
 
         m_renderer->Present(false);
         m_renderer->EndFrame();

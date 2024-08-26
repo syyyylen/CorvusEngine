@@ -44,12 +44,10 @@ cbuffer LightsCbuf : register(b5)
 
 float4 Main(VertexOut Input) : SV_TARGET
 {
-    return float4(255.0f, 240.0f, 0.0f, 1.0f);
-    
-    float4 albedo = float4(Albedo.Sample(Sampler, Input.Position.xy).xyz, 1.0);
-    float3 normal = normalize(Normal.Sample(Sampler, Input.Position.xy).xyz);
-    float depth = Depth.Sample(Sampler, Input.Position.xy).x;
-    
+    float4 albedo = float4(Albedo.Sample(Sampler, Input.Texcoord.xy).xyz, 1.0);
+    float3 normal = normalize(Normal.Sample(Sampler, Input.Texcoord.xy).xyz);
+    float depth = Depth.Sample(Sampler, Input.Texcoord.xy).x;
+
     switch (Mode)
     {
     case 0:
@@ -58,6 +56,8 @@ float4 Main(VertexOut Input) : SV_TARGET
         return float4(normal, 1.0);
     case 2:
         return float4(depth, 0.0, 0.0, 1.0);
+    case 3:
+        return float4(255.0f, 240.0f, 0.0f, 1.0f);
     default:
         return albedo;
     }
