@@ -13,23 +13,35 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     geomSpecs.DepthFormat = TextureFormat::R32Depth;
     geomSpecs.Cull = CullMode::Back;
     geomSpecs.Fill = FillMode::Solid;
-    geomSpecs.TransparencyEnabled = false;
+    geomSpecs.BlendOperation = BlendOperation::None;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, geomSpecs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/DeferredGBufferPixel.hlsl", ShaderType::Pixel, geomSpecs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_deferredGeometryPipeline = renderer->CreateGraphicsPipeline(geomSpecs);
 
-    GraphicsPipelineSpecs lightingSpecs;
-    lightingSpecs.FormatCount = 1;
-    lightingSpecs.Formats[0] = TextureFormat::RGBA8;
-    lightingSpecs.DepthEnabled = false;
-    lightingSpecs.Cull = CullMode::Back;
-    lightingSpecs.Fill = FillMode::Solid;
-    lightingSpecs.TransparencyEnabled = false;
-    ShaderCompiler::CompileShader("Shaders/ScreenQuadVertex.hlsl", ShaderType::Vertex, lightingSpecs.ShadersBytecodes[ShaderType::Vertex]);
-    ShaderCompiler::CompileShader("Shaders/DeferredLightingPixel.hlsl", ShaderType::Pixel, lightingSpecs.ShadersBytecodes[ShaderType::Pixel]);
+    GraphicsPipelineSpecs dirLightSpecs;
+    dirLightSpecs.FormatCount = 1;
+    dirLightSpecs.Formats[0] = TextureFormat::RGBA8;
+    dirLightSpecs.BlendOperation = BlendOperation::None;
+    dirLightSpecs.DepthEnabled = false;
+    dirLightSpecs.Cull = CullMode::Back;
+    dirLightSpecs.Fill = FillMode::Solid;
+    ShaderCompiler::CompileShader("Shaders/ScreenQuadVertex.hlsl", ShaderType::Vertex, dirLightSpecs.ShadersBytecodes[ShaderType::Vertex]);
+    ShaderCompiler::CompileShader("Shaders/DeferredLightingPixel.hlsl", ShaderType::Pixel, dirLightSpecs.ShadersBytecodes[ShaderType::Pixel]);
 
-    m_deferredLightingPipeline = renderer->CreateGraphicsPipeline(lightingSpecs);
+    m_deferredDirLightPipeline = renderer->CreateGraphicsPipeline(dirLightSpecs);
+
+    GraphicsPipelineSpecs pointLightSpecs;
+    pointLightSpecs.FormatCount = 1;
+    pointLightSpecs.Formats[0] = TextureFormat::RGBA8;
+    pointLightSpecs.BlendOperation = BlendOperation::Additive;
+    pointLightSpecs.Cull = CullMode::Back;
+    pointLightSpecs.Fill = FillMode::Solid;
+    pointLightSpecs.DepthEnabled = false;
+    ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, pointLightSpecs.ShadersBytecodes[ShaderType::Vertex]);
+    ShaderCompiler::CompileShader("Shaders/DeferredPointLightPixel.hlsl", ShaderType::Pixel, pointLightSpecs.ShadersBytecodes[ShaderType::Pixel]);
+
+    m_deferredPointLightPipeline = renderer->CreateGraphicsPipeline(pointLightSpecs);
 
     m_geometryConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_geometryConstantBuffer);
@@ -52,6 +64,12 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     Uploader uploader = renderer->CreateUploader();
     uploader.CopyHostToDeviceLocal(quadVerts, sizeof(ScreenQuadVertex) * 4, m_screenQuadVertexBuffer);
     renderer->FlushUploader(uploader);
+
+    m_pointLightMesh = std::make_shared<RenderItem>();
+    m_pointLightMesh->ImportMesh(renderer, "Assets/sphere.gltf");
+
+    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    renderer->CreateConstantBuffer(m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer);
 }
 
 void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
@@ -146,8 +164,9 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     auto backbuffer = renderer->GetBackBuffer();
     commandList->BindRenderTargets({ backbuffer }, nullptr);
+    
     commandList->SetTopology(Topology::TriangleStrip);
-    commandList->BindGraphicsPipeline(m_deferredLightingPipeline);
+    commandList->BindGraphicsPipeline(m_deferredDirLightPipeline);
     commandList->BindConstantBuffer(m_lightingConstantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 1);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
@@ -155,4 +174,36 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
+
+    commandList->SetTopology(Topology::TriangleList);
+    commandList->BindGraphicsPipeline(m_deferredPointLightPipeline);
+    commandList->BindConstantBuffer(m_geometryConstantBuffer, 0);
+
+    // TODO clean all this (all scenes point lights passed from the editor etc...)
+
+    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
+    mat *= DirectX::XMMatrixScaling(6.0f, 6.0f, 6.0f);
+    mat *= DirectX::XMMatrixTranslation(0.0f, 1.0f, 0.0f);
+    DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform, mat);
+
+    ObjectConstantBuffer objCbuf;
+    objCbuf.HasAlbedo = m_pointLightMesh->GetMaterial().HasAlbedo;
+    objCbuf.HasNormalMap = m_pointLightMesh->GetMaterial().HasNormal;
+    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform);
+    DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
+
+    void* objCbufData;
+    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
+    memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
+    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
+
+    commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
+    commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
+    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
+    commandList->BindGraphicsSampler(m_textureSampler, 5);
+
+    commandList->BindConstantBuffer(m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer, 1);
+    commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
+    commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
+    commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);
 }

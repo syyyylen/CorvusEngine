@@ -65,6 +65,8 @@ float4 Main(VertexOut Input) : SV_TARGET
         return float4(normal, 1.0);
     case 3:
         return float4(depth, 0.0, 0.0, 1.0);
+    case 4: // Debug
+        return albedo * float4(dirLight, 1.0);
     default:
         return albedo;
     }

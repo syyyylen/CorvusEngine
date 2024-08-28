@@ -26,6 +26,13 @@ enum class DepthOperation
     None = D3D12_COMPARISON_FUNC_NEVER
 };
 
+enum BlendOperation
+{
+    None,
+    Transparency,
+    Additive
+};
+
 struct GraphicsPipelineSpecs
 {
     FillMode Fill;
@@ -36,7 +43,7 @@ struct GraphicsPipelineSpecs
     int FormatCount;
     TextureFormat DepthFormat;
     bool DepthEnabled;
-    bool TransparencyEnabled;
+    BlendOperation BlendOperation;
 
     std::unordered_map<ShaderType, Shader> ShadersBytecodes;
 };

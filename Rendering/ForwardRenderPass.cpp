@@ -12,7 +12,7 @@ void ForwardRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int 
     specs.DepthFormat = TextureFormat::R32Depth;
     specs.Cull = CullMode::Back;
     specs.Fill = FillMode::Solid;
-    specs.TransparencyEnabled = false;
+    specs.BlendOperation = BlendOperation::None;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 

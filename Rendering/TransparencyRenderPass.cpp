@@ -7,12 +7,12 @@ void TransparencyRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer,
     GraphicsPipelineSpecs specs;
     specs.FormatCount = 1;
     specs.Formats[0] = TextureFormat::RGBA8;
+    specs.BlendOperation = BlendOperation::Transparency;
     specs.DepthEnabled = true;
     specs.Depth = DepthOperation::Less;
     specs.DepthFormat = TextureFormat::R32Depth;
     specs.Cull = CullMode::Back;
     specs.Fill = FillMode::Solid;
-    specs.TransparencyEnabled = true;
     ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, specs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/SimplePixel.hlsl", ShaderType::Pixel, specs.ShadersBytecodes[ShaderType::Pixel]);
 

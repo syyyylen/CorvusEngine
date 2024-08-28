@@ -84,8 +84,8 @@ CorvusEditor::CorvusEditor()
         DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
         mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotX));
         mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
-        mat *= DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f);
         mat *= DirectX::XMMatrixScaling(scale, scale, scale);
+        mat *= DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f);
         DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
 
         ObjectConstantBuffer objCbuf;
@@ -108,7 +108,7 @@ CorvusEditor::CorvusEditor()
     addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 0.0f, 90.0f);
     addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0);
     addModel("Assets/sphere.gltf", "", "", 6.0f, 0.0f, 0.0f, 1.0f, true);
-    addModel("Assets/dragon.obj", "", "", 38.0f, -4.0f, 0.0f, 0.25f);
+    addModel("Assets/dragon.obj", "", "", 10.0f, -1.0f, 0.0f, 0.25f);
     
     m_startTime = clock();
 
@@ -206,8 +206,8 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 4);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "Debug" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 5);
         ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
         ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 1.0f);
         ImGui::End();
