@@ -50,6 +50,11 @@ private:
     float m_dirLightDirection[3] = { 1.0f, 1.0f, 0.0f };
     float m_dirLightIntensity = 1.0;
 
+    // TODO remove this
+    float m_testLightConstAttenuation = 1.0f;
+    float m_testLightLinearAttenuation = 0.2f;
+    float m_testLightQuadraticAttenuation = 0.1f;
+
     int m_viewMode;
 
     std::shared_ptr<RenderPass> m_deferredPass;

@@ -43,8 +43,8 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
 
     m_deferredPointLightPipeline = renderer->CreateGraphicsPipeline(pointLightSpecs);
 
-    m_geometryConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    renderer->CreateConstantBuffer(m_geometryConstantBuffer);
+    m_sceneConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    renderer->CreateConstantBuffer(m_sceneConstantBuffer);
 
     m_lightingConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_lightingConstantBuffer);
@@ -68,8 +68,12 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     m_pointLightMesh = std::make_shared<RenderItem>();
     m_pointLightMesh->ImportMesh(renderer, "Assets/sphere.gltf");
 
-    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    renderer->CreateConstantBuffer(m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer);
+    for(int i = 0; i < 10; i++) // TODO fix max lights situation (batch all spheres as instanced)
+    {
+        auto lightConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+        renderer->CreateConstantBuffer(lightConstantBuffer);
+        m_lightsConstantBuffers.emplace_back(lightConstantBuffer);
+    }
 }
 
 void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
@@ -109,9 +113,9 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
         
     void* data;
-    m_geometryConstantBuffer->Map(0, 0, &data);
+    m_sceneConstantBuffer->Map(0, 0, &data);
     memcpy(data, &cbuf, sizeof(SceneConstantBuffer));
-    m_geometryConstantBuffer->Unmap(0, 0);
+    m_sceneConstantBuffer->Unmap(0, 0);
     
     auto commandList = renderer->GetCurrentCommandList();
 
@@ -127,7 +131,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredGeometryPipeline);
-    commandList->BindConstantBuffer(m_geometryConstantBuffer, 0);
+    commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 
     for(const auto renderItem : renderItems)
@@ -177,33 +181,37 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredPointLightPipeline);
-    commandList->BindConstantBuffer(m_geometryConstantBuffer, 0);
-
-    // TODO clean all this (all scenes point lights passed from the editor etc...)
-
-    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
-    mat *= DirectX::XMMatrixScaling(6.0f, 6.0f, 6.0f);
-    mat *= DirectX::XMMatrixTranslation(0.0f, 1.0f, 0.0f);
-    DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform, mat);
-
-    ObjectConstantBuffer objCbuf;
-    objCbuf.HasAlbedo = m_pointLightMesh->GetMaterial().HasAlbedo;
-    objCbuf.HasNormalMap = m_pointLightMesh->GetMaterial().HasNormal;
-    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform);
-    DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
-
-    void* objCbufData;
-    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
-    memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-    m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
-
+    commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
     commandList->BindGraphicsSampler(m_textureSampler, 5);
 
-    commandList->BindConstantBuffer(m_pointLightMesh->GetPrimitives()[0].m_objectConstantBuffer, 1);
-    commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
-    commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
-    commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);
+    for(int i = 0; i < globalPassData.PointLights.size(); i++)
+    {
+        constexpr float radius = 6.0f;
+
+        DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
+        mat *= DirectX::XMMatrixScaling(radius, radius, radius);
+        mat *= DirectX::XMMatrixTranslation(globalPassData.PointLights[i].Position.x, globalPassData.PointLights[i].Position.y, globalPassData.PointLights[i].Position.z);
+        DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform, mat);
+
+        ObjectConstantBuffer objCbuf;
+        objCbuf.HasAlbedo = m_pointLightMesh->GetMaterial().HasAlbedo;
+        objCbuf.HasNormalMap = m_pointLightMesh->GetMaterial().HasNormal;
+        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform);
+        DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
+
+        auto constantBuffer = m_lightsConstantBuffers[i];
+
+        void* objCbufData;
+        constantBuffer->Map(0, 0, &objCbufData);
+        memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
+        constantBuffer->Unmap(0, 0);
+
+        commandList->BindConstantBuffer(constantBuffer, 1);
+        commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
+        commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
+        commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);
+    }
 }

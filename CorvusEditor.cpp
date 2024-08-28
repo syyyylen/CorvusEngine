@@ -160,8 +160,19 @@ void CorvusEditor::Run()
         m_camera.UpdateViewMatrix();
         m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
         
-        std::vector<PointLight> pointLights;
+        PointLight testLight;
+        testLight.Position = { 0.0f, 3.0f, 0.0f };
+        testLight.LinearAttenuation = m_testLightLinearAttenuation;
+        testLight.ConstantAttenuation = m_testLightConstAttenuation;
+        testLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
 
+        PointLight testLight2 = testLight;
+        testLight2.Position = { 7.0f, -2.0f, -3.0f };
+
+        std::vector<PointLight> pointLights;
+        pointLights.emplace_back(testLight);
+        pointLights.emplace_back(testLight2);
+        
         GlobalPassData passData = {};
         passData.DeltaTime = dt;
         passData.ElapsedTime = m_elapsedTime;
@@ -180,7 +191,7 @@ void CorvusEditor::Run()
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
 
         m_deferredPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
-        m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
+        // m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
         
         commandList->BindRenderTargets({ backbuffer }, nullptr);
 
@@ -210,6 +221,12 @@ void CorvusEditor::Run()
         ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 5);
         ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
         ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 1.0f);
+        ImGui::End();
+
+        ImGui::Begin("Debug Point Light");
+        ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 1.0f);
         ImGui::End();
 
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();
