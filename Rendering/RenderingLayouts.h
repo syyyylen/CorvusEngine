@@ -6,7 +6,7 @@
 struct PointLight
 {
     DirectX::XMFLOAT3 Position;
-    float Padding1 = 0.0f;
+    float Radius = 10.0f;
     // 16 bytes boundary 
     DirectX::XMFLOAT4 Color = { 1.0, 1.0, 1.0, 1.0 };
     // 16 bytes boundary 
@@ -14,9 +14,6 @@ struct PointLight
     float LinearAttenuation = 0.2f;
     float QuadraticAttenuation = 0.1f;
     float Padding3;
-    // 16 bytes boundary
-    int Enabled = true;
-    float Padding4[3];
 };
 
 struct PointLightsConstantBuffer

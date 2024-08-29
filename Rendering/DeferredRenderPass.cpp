@@ -74,6 +74,10 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
         auto lightConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
         renderer->CreateConstantBuffer(lightConstantBuffer);
         m_lightsConstantBuffers.emplace_back(lightConstantBuffer);
+
+        auto lightInfoConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+        renderer->CreateConstantBuffer(lightInfoConstantBuffer);
+        m_lightsInfosConstantBuffers.emplace_back(lightInfoConstantBuffer);
     }
 }
 
@@ -199,7 +203,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     for(int i = 0; i < globalPassData.PointLights.size(); i++)
     {
-        constexpr float radius = 4.0f;
+        float radius = globalPassData.PointLights[i].Radius;
 
         DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
         mat *= DirectX::XMMatrixScaling(radius, radius, radius);
@@ -219,7 +223,15 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
         constantBuffer->Unmap(0, 0);
 
+        auto infosConstantBuffer = m_lightsInfosConstantBuffers[i];
+
+        void* infoCbufData;
+        infosConstantBuffer->Map(0, 0, &infoCbufData);
+        memcpy(infoCbufData, &globalPassData.PointLights[i], sizeof(PointLight));
+        infosConstantBuffer->Unmap(0, 0);
+
         commandList->BindConstantBuffer(constantBuffer, 1);
+        commandList->BindConstantBuffer(infosConstantBuffer, 6);
         commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
         commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
         commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);

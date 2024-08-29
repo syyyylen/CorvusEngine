@@ -54,6 +54,7 @@ private:
     float m_testLightConstAttenuation = 1.0f;
     float m_testLightLinearAttenuation = 0.2f;
     float m_testLightQuadraticAttenuation = 0.1f;
+    DirectX::XMFLOAT4 m_testLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     int m_viewMode;
 

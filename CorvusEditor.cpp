@@ -162,12 +162,17 @@ void CorvusEditor::Run()
         
         PointLight testLight;
         testLight.Position = { 0.0f, 3.0f, 0.0f };
+        testLight.Color = m_testLightColor;
         testLight.LinearAttenuation = m_testLightLinearAttenuation;
         testLight.ConstantAttenuation = m_testLightConstAttenuation;
         testLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
 
-        PointLight testLight2 = testLight;
+        PointLight testLight2 = {};
         testLight2.Position = { 8.0f, -1.5f, -2.0f };
+        testLight2.Color = m_testLightColor;
+        testLight2.LinearAttenuation = m_testLightLinearAttenuation;
+        testLight2.ConstantAttenuation = m_testLightConstAttenuation;
+        testLight2.QuadraticAttenuation = m_testLightQuadraticAttenuation;
 
         std::vector<PointLight> pointLights;
         pointLights.emplace_back(testLight);
@@ -227,6 +232,12 @@ void CorvusEditor::Run()
         ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
         ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 1.0f);
         ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 1.0f);
+        float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
+        ImGui::ColorEdit4("Color", color);
+        m_testLightColor.x = color[0];
+        m_testLightColor.y = color[1];
+        m_testLightColor.z = color[2];
+        m_testLightColor.w = color[3];
         ImGui::End();
 
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();

@@ -28,6 +28,7 @@ private:
     std::shared_ptr<Buffer> m_screenQuadVertexBuffer;
     std::shared_ptr<RenderItem> m_pointLightMesh;
     std::vector<std::shared_ptr<Buffer>> m_lightsConstantBuffers;
+    std::vector<std::shared_ptr<Buffer>> m_lightsInfosConstantBuffers;
     
     GBuffer m_GBuffer;
 };
