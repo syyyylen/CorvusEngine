@@ -5,9 +5,10 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
     GraphicsPipelineSpecs geomSpecs;
-    geomSpecs.FormatCount = 2;
+    geomSpecs.FormatCount = 3;
     geomSpecs.Formats[0] = TextureFormat::R11G11B10Float;
     geomSpecs.Formats[1] = TextureFormat::RGBA8SNorm;
+    geomSpecs.Formats[2] = TextureFormat::R11G11B10Float;
     geomSpecs.DepthEnabled = true;
     geomSpecs.Depth = DepthOperation::Less;
     geomSpecs.DepthFormat = TextureFormat::R32Depth;
@@ -38,7 +39,7 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     pointLightSpecs.Cull = CullMode::Back;
     pointLightSpecs.Fill = FillMode::Solid;
     pointLightSpecs.DepthEnabled = false;
-    ShaderCompiler::CompileShader("Shaders/SimpleVertex.hlsl", ShaderType::Vertex, pointLightSpecs.ShadersBytecodes[ShaderType::Vertex]);
+    ShaderCompiler::CompileShader("Shaders/DeferredPointLightVertex.hlsl", ShaderType::Vertex, pointLightSpecs.ShadersBytecodes[ShaderType::Vertex]);
     ShaderCompiler::CompileShader("Shaders/DeferredPointLightPixel.hlsl", ShaderType::Pixel, pointLightSpecs.ShadersBytecodes[ShaderType::Pixel]);
 
     m_deferredPointLightPipeline = renderer->CreateGraphicsPipeline(pointLightSpecs);
@@ -80,6 +81,7 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
 {
     m_GBuffer.AlbedoRenderTarget.reset();
     m_GBuffer.NormalRenderTarget.reset();
+    m_GBuffer.WorldPositionRenderTarget.reset();
     m_GBuffer.DepthBuffer.reset();
     
     m_GBuffer.DepthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
@@ -95,6 +97,10 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_GBuffer.NormalRenderTarget = renderer->CreateTexture(width, height, TextureFormat::RGBA8SNorm, TextureType::RenderTarget);
     renderer->CreateRenderTargetView(m_GBuffer.NormalRenderTarget);
     renderer->CreateShaderResourceView(m_GBuffer.NormalRenderTarget);
+
+    m_GBuffer.WorldPositionRenderTarget = renderer->CreateTexture(width, height, TextureFormat::R11G11B10Float, TextureType::RenderTarget);
+    renderer->CreateRenderTargetView(m_GBuffer.WorldPositionRenderTarget);
+    renderer->CreateShaderResourceView(m_GBuffer.WorldPositionRenderTarget);
 }
 
 void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
@@ -121,13 +127,15 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    commandList->ImageBarrier(m_GBuffer.WorldPositionRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
     commandList->ClearRenderTarget(m_GBuffer.AlbedoRenderTarget, 0.0f, 0.0f, 0.0f, 1.0f);
     commandList->ClearRenderTarget(m_GBuffer.NormalRenderTarget, 0.0f, 0.0f, 0.0f, 1.0f);
+    commandList->ClearRenderTarget(m_GBuffer.WorldPositionRenderTarget, 100.0f, 100.0f, 100.0f, 1.0f);
     commandList->ClearDepthTarget(m_GBuffer.DepthBuffer);
 
-    commandList->BindRenderTargets({ m_GBuffer.AlbedoRenderTarget, m_GBuffer.NormalRenderTarget }, m_GBuffer.DepthBuffer);
+    commandList->BindRenderTargets({ m_GBuffer.AlbedoRenderTarget, m_GBuffer.NormalRenderTarget, m_GBuffer.WorldPositionRenderTarget }, m_GBuffer.DepthBuffer);
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredGeometryPipeline);
@@ -156,6 +164,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
+    commandList->ImageBarrier(m_GBuffer.WorldPositionRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
 
     auto invViewProj = camera.GetInvViewProjMatrix();
@@ -175,7 +184,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsSampler(m_textureSampler, 1);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
-    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
+    commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
+    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
 
@@ -184,12 +194,12 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
-    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 4);
-    commandList->BindGraphicsSampler(m_textureSampler, 5);
+    commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
+    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
 
     for(int i = 0; i < globalPassData.PointLights.size(); i++)
     {
-        constexpr float radius = 6.0f;
+        constexpr float radius = 4.0f;
 
         DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
         mat *= DirectX::XMMatrixScaling(radius, radius, radius);

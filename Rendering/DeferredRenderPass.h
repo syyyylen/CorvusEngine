@@ -5,6 +5,7 @@ struct GBuffer
 {
     std::shared_ptr<Texture> AlbedoRenderTarget;
     std::shared_ptr<Texture> NormalRenderTarget;
+    std::shared_ptr<Texture> WorldPositionRenderTarget;
     std::shared_ptr<Texture> DepthBuffer;
 };
 

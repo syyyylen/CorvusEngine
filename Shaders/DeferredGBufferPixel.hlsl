@@ -20,6 +20,7 @@ struct PixelOut
 {
     float3 Albedo : SV_TARGET0;
     float4 Normal : SV_TARGET1;
+    float3 PositionWS : SV_TARGET2;
 };
 
 PixelOut Main(PixelIn Input)
@@ -44,6 +45,7 @@ PixelOut Main(PixelIn Input)
 
     pixelOut.Albedo = albedo.xyz;
     pixelOut.Normal = float4(normal, 1.0);
+    pixelOut.PositionWS = Input.PositionWS;
 
     return pixelOut;
 }

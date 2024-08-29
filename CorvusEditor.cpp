@@ -167,7 +167,7 @@ void CorvusEditor::Run()
         testLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
 
         PointLight testLight2 = testLight;
-        testLight2.Position = { 7.0f, -2.0f, -3.0f };
+        testLight2.Position = { 8.0f, -1.5f, -2.0f };
 
         std::vector<PointLight> pointLights;
         pointLights.emplace_back(testLight);
@@ -217,8 +217,8 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 20.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "Debug" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 5);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "Debug" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
         ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
         ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 1.0f);
         ImGui::End();
@@ -234,6 +234,7 @@ void CorvusEditor::Run()
         ImGui::Begin("Debug GBuffer");
         ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
         ImGui::End();
         
