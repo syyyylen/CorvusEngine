@@ -1,12 +1,12 @@
 ﻿#pragma once
 #include "Core.h"
 
-#define MAX_LIGHTS 1
+#define MAX_LIGHTS 100
 
 struct PointLight
 {
     DirectX::XMFLOAT3 Position;
-    float Radius = 10.0f;
+    float Radius = 20.0f;
     // 16 bytes boundary 
     DirectX::XMFLOAT4 Color = { 1.0, 1.0, 1.0, 1.0 };
     // 16 bytes boundary 

@@ -1,4 +1,7 @@
 ﻿#include "CorvusEditor.h"
+
+#include <random>
+
 #include "Logger.h"
 #include <ImGui/imgui.h>
 
@@ -36,7 +39,7 @@ CorvusEditor::CorvusEditor()
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
         m_deferredPass->OnResize(m_renderer, width, height);
-        m_transparencyPass->OnResize(m_renderer, width, height);
+        // m_transparencyPass->OnResize(m_renderer, width, height);
         updateProjMatrix((float)width, (float)height);
     });
 
@@ -45,70 +48,28 @@ CorvusEditor::CorvusEditor()
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
-    m_transparencyPass = std::make_shared<TransparencyRenderPass>();
-    m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+    // m_transparencyPass = std::make_shared<TransparencyRenderPass>();
+    // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
-    auto addModel = [this](const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
-        float offsetX = 0.0f, float offsetY = 0.0f, float rotX = 0.0f, float scale = 1.0f, bool transparent = false)
+    constexpr float space = 3.0f;
+    constexpr int row = 12;
+    constexpr int column = 12;
+    
+    // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
+    
+    for(int i = 0; i < row; i++)
     {
-        auto model = std::make_shared<RenderItem>();
-        model->ImportMesh(m_renderer, modelPath);
-
-        Uploader uploader = m_renderer->CreateUploader();
-        Image albedoImg; // We need those img inside the uploader scope
-        Image normalImg;
-
-        if(!albedoPath.empty())
+        for(int j = 0; j < column; j++)
         {
-            albedoImg.LoadImageFromFile(albedoPath);
-            auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-            m_renderer->CreateShaderResourceView(albedoTexture);
-            model->GetMaterial().HasAlbedo = true;
-            model->GetMaterial().Albedo = albedoTexture;
-            uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
+            float posX = space * (float)i;
+            float posZ = space * (float)j;
+
+            if(i % 2 == 0)
+                AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, { 0.0f, 0.0f, 0.0f }, { 0.25f, 0.25f, 0.25f });
+            else
+                AddLightToScene({ posX, 1.0f, posZ }, {}, true);
         }
-
-        if(!normalPath.empty())
-        {
-            normalImg.LoadImageFromFile(normalPath);
-            auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-            m_renderer->CreateShaderResourceView(normalTexture);
-            model->GetMaterial().HasNormal = true;
-            model->GetMaterial().Normal = normalTexture;
-            uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
-        }
-
-        if(uploader.HasCommands())
-            m_renderer->FlushUploader(uploader);
-
-        DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
-        mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotX));
-        mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(180.0f));
-        mat *= DirectX::XMMatrixScaling(scale, scale, scale);
-        mat *= DirectX::XMMatrixTranslation(offsetX, offsetY, 0.0f);
-        DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
-
-        ObjectConstantBuffer objCbuf;
-        objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
-        objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
-        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
-        DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
-
-        model->GetPrimitives()[0].m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-        m_renderer->CreateConstantBuffer(model->GetPrimitives()[0].m_objectConstantBuffer);
-
-        void* objCbufData;
-        model->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
-        memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-        model->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
-
-        transparent ? m_transparentRenderItems.push_back(model) : m_opaqueRenderItems.push_back(model);
-    };
-
-    addModel("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", 0.0f, 0.0f, 90.0f);
-    addModel("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", 3.0);
-    addModel("Assets/sphere.gltf", "", "", 6.0f, 0.0f, 0.0f, 1.0f, true);
-    addModel("Assets/dragon.obj", "", "", 10.0f, -1.0f, 0.0f, 0.25f);
+    }
     
     m_startTime = clock();
 
@@ -132,6 +93,86 @@ CorvusEditor::~CorvusEditor()
     InputSystem::Release();
     
     Logger::WriteLogsToFile();
+}
+
+void CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent)
+{
+    auto model = std::make_shared<RenderItem>();
+    model->ImportMesh(m_renderer, modelPath);
+
+    Uploader uploader = m_renderer->CreateUploader();
+    Image albedoImg; // We need those img inside the uploader scope
+    Image normalImg;
+
+    if(!albedoPath.empty())
+    {
+        albedoImg.LoadImageFromFile(albedoPath);
+        auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+        m_renderer->CreateShaderResourceView(albedoTexture);
+        model->GetMaterial().HasAlbedo = true;
+        model->GetMaterial().Albedo = albedoTexture;
+        uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
+    }
+
+    if(!normalPath.empty())
+    {
+        normalImg.LoadImageFromFile(normalPath);
+        auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
+        m_renderer->CreateShaderResourceView(normalTexture);
+        model->GetMaterial().HasNormal = true;
+        model->GetMaterial().Normal = normalTexture;
+        uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
+    }
+
+    if(uploader.HasCommands())
+        m_renderer->FlushUploader(uploader);
+
+    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.x));
+    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.y));
+    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.z));
+    mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
+    mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+    DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
+
+    ObjectConstantBuffer objCbuf;
+    objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
+    objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
+    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+    DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
+
+    model->GetPrimitives()[0].m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    m_renderer->CreateConstantBuffer(model->GetPrimitives()[0].m_objectConstantBuffer);
+
+    void* objCbufData;
+    model->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
+    memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
+    model->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
+
+    transparent ? m_transparentRenderItems.push_back(model) : m_opaqueRenderItems.push_back(model);
+}
+
+void CorvusEditor::AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color, bool randomColor)
+{
+    auto RandFloatRange = [](float min, float max) -> float
+    {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> distribution(min, max);
+        return distribution(gen);
+    };
+    
+    PointLight pointLight;
+    pointLight.Position = position;
+    if(randomColor)
+        pointLight.Color = { RandFloatRange(0.0f, 1.0f), RandFloatRange(0.0f, 1.0f), RandFloatRange(0.0f, 1.0f), 1.0f };
+    else
+        pointLight.Color = color;
+    pointLight.ConstantAttenuation = m_testLightConstAttenuation;
+    pointLight.LinearAttenuation = m_testLightLinearAttenuation;
+    pointLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
+    
+    m_pointLights.emplace_back(pointLight);
 }
 
 void CorvusEditor::Run()
@@ -159,30 +200,27 @@ void CorvusEditor::Run()
 
         m_camera.UpdateViewMatrix();
         m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
-        
-        PointLight testLight;
-        testLight.Position = { 0.0f, 3.0f, 0.0f };
-        testLight.Color = m_testLightColor;
-        testLight.LinearAttenuation = m_testLightLinearAttenuation;
-        testLight.ConstantAttenuation = m_testLightConstAttenuation;
-        testLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
 
-        PointLight testLight2 = {};
-        testLight2.Position = { 8.0f, -1.5f, -2.0f };
-        testLight2.Color = m_testLightColor;
-        testLight2.LinearAttenuation = m_testLightLinearAttenuation;
-        testLight2.ConstantAttenuation = m_testLightConstAttenuation;
-        testLight2.QuadraticAttenuation = m_testLightQuadraticAttenuation;
+        for(auto& pointLight : m_pointLights)
+        {
+            if(m_movePointLights)
+            {
+                auto pos = pointLight.Position;
+                auto posY = cos(m_elapsedTime * m_movePointLightsSpeed) * 16.0f;
+                pointLight.Position = { pos.x, posY, pos.z };
+            }
+            
+            pointLight.ConstantAttenuation = m_testLightConstAttenuation;
+            pointLight.LinearAttenuation = m_testLightLinearAttenuation;
+            pointLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
+        }
 
-        std::vector<PointLight> pointLights;
-        pointLights.emplace_back(testLight);
-        pointLights.emplace_back(testLight2);
-        
+        std::vector<PointLight> pl = {};
         GlobalPassData passData = {};
         passData.DeltaTime = dt;
         passData.ElapsedTime = m_elapsedTime;
         passData.ViewMode = m_viewMode;
-        passData.PointLights = pointLights;
+        passData.PointLights = m_enablePointLights ? m_pointLights : pl;
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
 
@@ -228,16 +266,19 @@ void CorvusEditor::Run()
         ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 1.0f);
         ImGui::End();
 
-        ImGui::Begin("Debug Point Light");
+        ImGui::Begin("Debug Point Lights");
+        ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
+        ImGui::Checkbox("Move", &m_movePointLights);
+        ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
         ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
         ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 1.0f);
         ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 1.0f);
-        float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
-        ImGui::ColorEdit4("Color", color);
-        m_testLightColor.x = color[0];
-        m_testLightColor.y = color[1];
-        m_testLightColor.z = color[2];
-        m_testLightColor.w = color[3];
+        // float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
+        // ImGui::ColorEdit4("Color", color);
+        // m_testLightColor.x = color[0];
+        // m_testLightColor.y = color[1];
+        // m_testLightColor.z = color[2];
+        // m_testLightColor.w = color[3];
         ImGui::End();
 
         auto GBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer();

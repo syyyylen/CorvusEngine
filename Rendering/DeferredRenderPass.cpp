@@ -69,7 +69,7 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     m_pointLightMesh = std::make_shared<RenderItem>();
     m_pointLightMesh->ImportMesh(renderer, "Assets/sphere.gltf");
 
-    for(int i = 0; i < 10; i++) // TODO fix max lights situation (batch all spheres as instanced)
+    for(int i = 0; i < MAX_LIGHTS; i++)
     {
         auto lightConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
         renderer->CreateConstantBuffer(lightConstantBuffer);

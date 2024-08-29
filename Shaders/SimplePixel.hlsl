@@ -2,7 +2,7 @@ SamplerState Sampler : register(s2);
 Texture2D Albedo : register(t3);
 Texture2D Normal : register(t4);
 
-#define MAX_LIGHTS 1
+#define MAX_LIGHTS 50
 
 struct PointLight
 {
