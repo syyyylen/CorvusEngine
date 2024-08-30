@@ -18,6 +18,8 @@ public:
 
     GBuffer GetGBuffer() { return m_GBuffer; }
 
+    void SetPBRDebugSettings(PBRDebugSettings debugSettings) { m_PBRDebugSettings = debugSettings; } // TODO remove this when PBR done
+
 private:
     std::shared_ptr<GraphicsPipeline> m_deferredGeometryPipeline;
     std::shared_ptr<GraphicsPipeline> m_deferredDirLightPipeline;
@@ -31,4 +33,8 @@ private:
     std::vector<std::shared_ptr<Buffer>> m_lightsInfosConstantBuffers;
     
     GBuffer m_GBuffer;
+
+    // TODO remove this when PBR done
+    PBRDebugSettings m_PBRDebugSettings = {};
+    std::shared_ptr<Buffer> m_PBRDebugConstantBuffer;
 };

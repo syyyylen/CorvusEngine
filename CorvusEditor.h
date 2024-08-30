@@ -59,11 +59,11 @@ private:
 
     float m_fov = 0.35f;
     float m_previousFov = m_fov;
-    float m_moveSpeed = 9.5f;
+    float m_moveSpeed = 15.0f;
     bool m_mouseLocked = true;
 
-    float m_dirLightDirection[3] = { 1.0f, 1.0f, 0.0f };
-    float m_dirLightIntensity = 1.0;
+    float m_dirLightDirection[3] = { 1.0f, -1.0f, -1.0f };
+    float m_dirLightIntensity = 2.0;
 
     // TODO remove this
     float m_testLightConstAttenuation = 0.6f;
@@ -73,6 +73,7 @@ private:
     bool m_enablePointLights = true;
     bool m_movePointLights = false;
     float m_movePointLightsSpeed = 0.8f;
+    PBRDebugSettings m_PBRDebugSettings;
 
     int m_viewMode;
 };

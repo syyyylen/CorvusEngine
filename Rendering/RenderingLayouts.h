@@ -48,3 +48,10 @@ struct ScreenQuadVertex
     DirectX::XMFLOAT4 Position;
     DirectX::XMFLOAT2 TexCoord;
 };
+
+struct PBRDebugSettings // TODO remove this when PBR done
+{
+    float Roughness = 0.2f;
+    float Metallic = 0.0f;
+    float Padding[2];
+}; // 16 bytes

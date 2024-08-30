@@ -49,7 +49,7 @@ float4 Main(PixelIn Input) : SV_TARGET
     float4 albedo = float4(Albedo.Load(int3(Input.Position.xy, 0)).xyz, 1.0);
     float3 normal = normalize(Normal.Load(int3(Input.Position.xy, 0)).xyz);
     float3 positionWS = WorldPosition.Load(int3(Input.Position.xy, 0)).xyz;
-    float depth = Depth.Load(int3(Input.Position.xy, 0)).x;
+    float depth = Depth.Load(int3(Input.Position.xy, 0)).x; // TODO reconstruct pos from depth
 
     float3 view = normalize(positionWS - Input.CameraPosition);
 
@@ -66,21 +66,8 @@ float4 Main(PixelIn Input) : SV_TARGET
 
     float3 finalLight = diffuse + specular;
 
-    switch (Input.Mode)
-    {
-    case 0:
-        return albedo * float4(finalLight, 1.0);
-    case 1:
-        return albedo;
-    case 2:
-        return float4(normal, 1.0);
-    case 3:
-        return float4(depth, 0.0, 0.0, 1.0);
-    case 4 :
-        return float4(positionWS, 1.0f);
-    case 5:
-        return float4(255.0f, 240.0f, 0.0f, 1.0f);
-    default:
-        return float4(0.5, 0.5, 0.5, 1.0f);
-    }
+    if(Input.Mode == 10) // if depth unused, remove at compil, fck up bind slots
+        return depth;
+
+    return albedo * float4(finalLight, 1.0);
 }

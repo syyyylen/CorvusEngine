@@ -79,6 +79,10 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
         renderer->CreateConstantBuffer(lightInfoConstantBuffer);
         m_lightsInfosConstantBuffers.emplace_back(lightInfoConstantBuffer);
     }
+
+    // TODO remove this when PBR done
+    m_PBRDebugConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    renderer->CreateConstantBuffer(m_PBRDebugConstantBuffer);
 }
 
 void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
@@ -109,6 +113,7 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
 
 void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
 {
+    // ------------------------------------------------------------- Geometry Pass (GBuffer --------------------------------------------------------------------
     auto view = camera.GetViewMatrix();
     auto proj = camera.GetProjMatrix();
 
@@ -166,6 +171,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         }
     }
 
+    // ------------------------------------------------------------- Lighting Pass (directional) --------------------------------------------------------------------
+
     commandList->ImageBarrier(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.NormalRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(m_GBuffer.WorldPositionRenderTarget, D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -179,12 +186,19 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     memcpy(data2, &cbuf, sizeof(SceneConstantBuffer));
     m_lightingConstantBuffer->Unmap(0, 0);
 
+    // TODO remove this when PBR done
+    void* data3;
+    m_PBRDebugConstantBuffer->Map(0, 0, &data3);
+    memcpy(data3, &m_PBRDebugSettings, sizeof(PBRDebugSettings));
+    m_PBRDebugConstantBuffer->Unmap(0, 0);
+
     auto backbuffer = renderer->GetBackBuffer();
     commandList->BindRenderTargets({ backbuffer }, nullptr);
     
     commandList->SetTopology(Topology::TriangleStrip);
     commandList->BindGraphicsPipeline(m_deferredDirLightPipeline);
     commandList->BindConstantBuffer(m_lightingConstantBuffer, 0);
+    commandList->BindConstantBuffer(m_PBRDebugConstantBuffer, 6); // TODO remove this when PBR done
     commandList->BindGraphicsSampler(m_textureSampler, 1);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
@@ -193,6 +207,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
 
+    // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------
+    
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredPointLightPipeline);
     commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
