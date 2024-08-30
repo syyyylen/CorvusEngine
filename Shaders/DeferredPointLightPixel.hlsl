@@ -53,14 +53,14 @@ float4 Main(PixelIn Input) : SV_TARGET
 
     float3 view = normalize(positionWS - Input.CameraPosition);
 
-    float l = length(positionWS - Input.ObjectPosition);
-    if(l > Radius)
+    float3 l = positionWS - Input.ObjectPosition;
+    float d = length(l);
+    if(d > Radius)
         return float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     float3 lightVector = normalize(l);
-    float distance = length(l);
-        
-    float attenuation = DoAttenuation(distance);
+    
+    float attenuation = DoAttenuation(d);
     float3 diffuse = DoDiffuse(Color, lightVector, normal) * attenuation;
     float3 specular = DoSpecular(Color, lightVector, normal, view) * attenuation;
 

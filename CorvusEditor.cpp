@@ -53,15 +53,14 @@ CorvusEditor::CorvusEditor()
     // m_transparencyPass = std::make_shared<TransparencyRenderPass>();
     // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
-
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
-    if(false)
+    if(true)
     {
         m_dirLightIntensity = 0.0f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 12;
-        constexpr int column = 12;
+        constexpr int row = 10;
+        constexpr int column = 10;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
     
@@ -81,9 +80,12 @@ CorvusEditor::CorvusEditor()
     }
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
-    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 180.0f, 0.0f, -90.0f });
-    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 3.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
-    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 6.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
+    if(false)
+    {
+        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 180.0f, 0.0f, -90.0f });
+        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 3.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
+        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 6.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
+    }
     
     m_startTime = clock();
 
@@ -214,7 +216,7 @@ void CorvusEditor::Run()
             if(m_movePointLights)
             {
                 auto pos = pointLight.Position;
-                auto posY = cos(m_elapsedTime * m_movePointLightsSpeed) * 16.0f;
+                auto posY = cos(m_elapsedTime * m_movePointLightsSpeed) * 10.0f;
                 pointLight.Position = { pos.x, posY, pos.z };
             }
             

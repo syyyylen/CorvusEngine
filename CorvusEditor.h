@@ -66,9 +66,9 @@ private:
     float m_dirLightIntensity = 1.0;
 
     // TODO remove this
-    float m_testLightConstAttenuation = 1.0f;
-    float m_testLightLinearAttenuation = 0.85f;
-    float m_testLightQuadraticAttenuation = 0.35f;
+    float m_testLightConstAttenuation = 0.6f;
+    float m_testLightLinearAttenuation = 0.15f;
+    float m_testLightQuadraticAttenuation = 0.15f;
     // DirectX::XMFLOAT4 m_testLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
     bool m_enablePointLights = true;
     bool m_movePointLights = false;

@@ -14,5 +14,5 @@ public:
     
 private:
     std::weak_ptr<D3D12Renderer> m_renderer;
-    std::map<std::string, std::weak_ptr<Texture>> m_textures;
+    std::unordered_map<std::string, std::weak_ptr<Texture>> m_textures;
 };
