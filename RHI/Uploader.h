@@ -5,7 +5,6 @@
 #include "Device.h"
 
 struct Image;
-class Renderer;
 class Buffer;
 class Texture;
 class CommandList;

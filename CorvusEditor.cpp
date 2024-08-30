@@ -45,31 +45,45 @@ CorvusEditor::CorvusEditor()
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
 
+    m_resourceManager = std::make_shared<ResourcesManager>(m_renderer);
+
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     // m_transparencyPass = std::make_shared<TransparencyRenderPass>();
     // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
-    constexpr float space = 3.0f;
-    constexpr int row = 12;
-    constexpr int column = 12;
-    
-    // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
-    
-    for(int i = 0; i < row; i++)
-    {
-        for(int j = 0; j < column; j++)
-        {
-            float posX = space * (float)i;
-            float posZ = space * (float)j;
 
-            if(i % 2 == 0)
-                AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, { 0.0f, 0.0f, 0.0f }, { 0.25f, 0.25f, 0.25f });
-            else
-                AddLightToScene({ posX, 1.0f, posZ }, {}, true);
+    // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
+    if(false)
+    {
+        m_dirLightIntensity = 0.0f;
+        
+        constexpr float space = 3.0f;
+        constexpr int row = 12;
+        constexpr int column = 12;
+    
+        // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
+    
+        for(int i = 0; i < row; i++)
+        {
+            for(int j = 0; j < column; j++)
+            {
+                float posX = space * (float)i;
+                float posZ = space * (float)j;
+
+                if(i % 2 == 0)
+                    AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, { 0.0f, 0.0f, 0.0f }, { 0.25f, 0.25f, 0.25f });
+                else
+                    AddLightToScene({ posX, 1.0f, posZ }, {}, true);
+            }
         }
     }
+    // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
+
+    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 180.0f, 0.0f, -90.0f });
+    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 3.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
+    AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 6.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
     
     m_startTime = clock();
 
@@ -101,27 +115,21 @@ void CorvusEditor::AddModelToScene(const std::string& modelPath, const std::stri
     model->ImportMesh(m_renderer, modelPath);
 
     Uploader uploader = m_renderer->CreateUploader();
-    Image albedoImg; // We need those img inside the uploader scope
+    Image albedoImg;
     Image normalImg;
 
     if(!albedoPath.empty())
     {
-        albedoImg.LoadImageFromFile(albedoPath);
-        auto albedoTexture = m_renderer->CreateTexture(albedoImg.Width, albedoImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-        m_renderer->CreateShaderResourceView(albedoTexture);
+        auto albedoTexture = m_resourceManager->LoadTexture(albedoPath, uploader, albedoImg);
         model->GetMaterial().HasAlbedo = true;
         model->GetMaterial().Albedo = albedoTexture;
-        uploader.CopyHostToDeviceTexture(albedoImg, albedoTexture);
     }
 
     if(!normalPath.empty())
     {
-        normalImg.LoadImageFromFile(normalPath);
-        auto normalTexture = m_renderer->CreateTexture(normalImg.Width, normalImg.Height, TextureFormat::RGBA8, TextureType::ShaderResource);
-        m_renderer->CreateShaderResourceView(normalTexture);
+        auto normalTexture = m_resourceManager->LoadTexture(normalPath, uploader, normalImg);
         model->GetMaterial().HasNormal = true;
         model->GetMaterial().Normal = normalTexture;
-        uploader.CopyHostToDeviceTexture(normalImg, normalTexture);
     }
 
     if(uploader.HasCommands())

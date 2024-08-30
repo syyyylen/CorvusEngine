@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "Core.h"
 #include "InputListener.h"
+#include "ResourcesManager.h"
 #include "Rendering/RenderItem.h"
 #include "Window.h"
 #include "RHI/D3D12Renderer.h"
@@ -45,6 +46,8 @@ private:
 
     std::vector<PointLight> m_pointLights;
 
+    std::shared_ptr<ResourcesManager> m_resourceManager;
+
     float m_startTime;
     float m_lastTime;
     float m_elapsedTime;
@@ -60,7 +63,7 @@ private:
     bool m_mouseLocked = true;
 
     float m_dirLightDirection[3] = { 1.0f, 1.0f, 0.0f };
-    float m_dirLightIntensity = 0.0;
+    float m_dirLightIntensity = 1.0;
 
     // TODO remove this
     float m_testLightConstAttenuation = 1.0f;
