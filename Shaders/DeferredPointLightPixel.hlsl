@@ -1,9 +1,11 @@
-﻿Texture2D Albedo : register(t2);
+﻿#include "Shaders/PBR.hlsl"
+
+Texture2D Albedo : register(t2);
 Texture2D Normal : register(t3);
 Texture2D WorldPosition : register(t4);
 Texture2D Depth : register(t5);
 
-cbuffer PointLightCbuf : register(b6)
+cbuffer PointLightCbuf : register(b7)
 {
     float3 Position;
     float Radius;
@@ -24,21 +26,6 @@ struct PixelIn
     int Mode : TEXCOORD2;
 };
 
-float3 DoDiffuse(float4 lightColor, float3 lightVector, float3 normal)
-{
-    return max(0.0f, dot(lightVector, normal)) * lightColor.xyz;
-}
-
-float3 DoSpecular(float4 lightColor, float3 lightVector, float3 normal, float3 view)
-{
-    float3 reflectedLight = normalize(reflect(-lightVector, normal));
-    float amountSpecularLight = 0;
-    if(dot(lightVector, normal) > 0)
-        amountSpecularLight = pow(max(0.0f, dot(reflectedLight, view)), 10.0f /* Shininess */);
-
-    return amountSpecularLight * lightColor.xyz;
-}
-
 float DoAttenuation(float distance)
 {
     return 1.0f / (ConstantAttenuation + LinearAttenuation * distance + QuadraticAttenuation * distance * distance);
@@ -51,23 +38,21 @@ float4 Main(PixelIn Input) : SV_TARGET
     float3 positionWS = WorldPosition.Load(int3(Input.Position.xy, 0)).xyz;
     float depth = Depth.Load(int3(Input.Position.xy, 0)).x; // TODO reconstruct pos from depth
 
-    float3 view = normalize(positionWS - Input.CameraPosition);
+    float3 view = normalize(Input.CameraPosition - positionWS);
 
-    float3 l = positionWS - Input.ObjectPosition;
+    float3 l = Input.ObjectPosition - positionWS;
     float d = length(l);
     if(d > Radius)
         return float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     float3 lightVector = normalize(l);
-    
     float attenuation = DoAttenuation(d);
-    float3 diffuse = DoDiffuse(Color, lightVector, normal) * attenuation;
-    float3 specular = DoSpecular(Color, lightVector, normal, view) * attenuation;
+    float3 radiance = Color.xyz * attenuation;
 
-    float3 finalLight = diffuse + specular;
+    float3 finalLight = PBR(Fdielectric, normal, view, lightVector, normalize(lightVector + view), radiance, albedo.xyz, Roughness, Metallic); // TODO compute F0
 
     if(Input.Mode == 10) // if depth unused, remove at compil, fck up bind slots
         return depth;
 
-    return albedo * float4(finalLight, 1.0);
+    return float4(finalLight, 1.0);
 }

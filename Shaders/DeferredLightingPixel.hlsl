@@ -35,12 +35,12 @@ float4 Main(VertexOut Input) : SV_TARGET
     float3 ambiant = 0.1f * albedo.xyz;
     float3 view = normalize(CameraPosition - positionWS);
 
-    float3 finalLight = PBR(Fdielectric, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, Roughness, Metallic) + ambiant;
+    float3 finalLight = PBR(Fdielectric, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, Roughness, Metallic) + ambiant; // TODO compute F0
 
     switch (Mode)
     {
     case 0:
-        return albedo * float4(finalLight, 1.0);
+        return float4(finalLight, 1.0);
     case 1:
         return albedo;
     case 2:
@@ -50,9 +50,9 @@ float4 Main(VertexOut Input) : SV_TARGET
     case 4:
         return float4(positionWS, 1.0);
     case 5: // Debug
-        return albedo * float4(finalLight, 1.0);
+        return float4(finalLight, 1.0);
     default:
-        return albedo;
+        return float4(finalLight, 1.0);
     }
     
     // safety Yellow

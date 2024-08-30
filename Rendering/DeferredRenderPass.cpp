@@ -208,10 +208,17 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->Draw(4);
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------
-    
+
+    // TODO remove this when PBR done
+    void* data4;
+    m_PBRDebugConstantBuffer->Map(0, 0, &data4);
+    memcpy(data4, &m_PBRDebugSettings, sizeof(PBRDebugSettings));
+    m_PBRDebugConstantBuffer->Unmap(0, 0);
+
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredPointLightPipeline);
     commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
+    commandList->BindConstantBuffer(m_PBRDebugConstantBuffer, 6); // TODO remove this when PBR done
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
@@ -247,7 +254,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         infosConstantBuffer->Unmap(0, 0);
 
         commandList->BindConstantBuffer(constantBuffer, 1);
-        commandList->BindConstantBuffer(infosConstantBuffer, 6);
+        commandList->BindConstantBuffer(infosConstantBuffer, 7);
         commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
         commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
         commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);

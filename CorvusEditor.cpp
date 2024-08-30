@@ -56,11 +56,11 @@ CorvusEditor::CorvusEditor()
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
     if(true)
     {
-        m_dirLightIntensity = 0.0f;
+        m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 8;
-        constexpr int column = 8;
+        constexpr int row = 14;
+        constexpr int column = 10;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
     
@@ -222,8 +222,8 @@ void CorvusEditor::Run()
         ImGui::Separator();
         ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
         ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
-        ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 1.0f);
-        ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
+        ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
         // float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
         // ImGui::ColorEdit4("Color", color);
         // m_testLightColor.x = color[0];
