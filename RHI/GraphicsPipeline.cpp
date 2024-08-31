@@ -76,18 +76,20 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     {
         D3D12_SHADER_INPUT_BIND_DESC ShaderInputBindDesc = ShaderBinds[ShaderBindIndex];
 
-        bool StructuredBuffer = ShaderInputBindDesc.Type == D3D_SIT_STRUCTURED;
-
+        bool isStructuredBuffer = ShaderInputBindDesc.Type == D3D_SIT_STRUCTURED;
+        
         D3D12_ROOT_PARAMETER RootParameter = {};
-        RootParameter.ParameterType = StructuredBuffer ? D3D12_ROOT_PARAMETER_TYPE_SRV : D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        RootParameter.ParameterType = isStructuredBuffer ? D3D12_ROOT_PARAMETER_TYPE_SRV : D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 
-        D3D12_DESCRIPTOR_RANGE Range = {};
-        if(!StructuredBuffer)
-            Range.NumDescriptors = 1;
-        Range.BaseShaderRegister = ShaderInputBindDesc.BindPoint;
-
-        switch (ShaderInputBindDesc.Type)
+        if(!isStructuredBuffer)
         {
+            D3D12_DESCRIPTOR_RANGE Range = {};
+            Range.NumDescriptors = 1;
+            Range.BaseShaderRegister = ShaderInputBindDesc.BindPoint;
+            Range.RegisterSpace = ShaderInputBindDesc.Space;
+
+            switch (ShaderInputBindDesc.Type)
+            {
             case D3D_SIT_SAMPLER:
                 Range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
                 break;
@@ -100,21 +102,21 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
             case D3D_SIT_CBUFFER:
                 Range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
                 break;
-            case D3D_SIT_STRUCTURED:
-                Range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                break;
             default:
                 LOG(Error, "GraphicsPipeline : unsupported shader resource !");
                 continue;
-        }
+            }
 
-        Ranges[RangeCount] = Range;
-
-        if(!StructuredBuffer)
-        {
+            Ranges[RangeCount] = Range;
             RootParameter.DescriptorTable.NumDescriptorRanges = 1;
             RootParameter.DescriptorTable.pDescriptorRanges = &Ranges[RangeCount];
         }
+        else
+        {
+            RootParameter.Descriptor.ShaderRegister = ShaderInputBindDesc.BindPoint;
+            RootParameter.Descriptor.RegisterSpace = ShaderInputBindDesc.Space;
+        }
+
         RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         Parameters[ParameterCount] = RootParameter;
 
@@ -125,7 +127,7 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     D3D12_ROOT_SIGNATURE_DESC RootSignatureDesc = {};
     RootSignatureDesc.NumParameters = ParameterCount;
     RootSignatureDesc.pParameters = Parameters.data();
-    RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+    RootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     ID3DBlob* pRootSignatureBlob;
     ID3DBlob* pErrorBlob;

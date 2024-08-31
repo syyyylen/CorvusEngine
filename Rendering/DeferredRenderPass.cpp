@@ -91,7 +91,7 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     renderer->CreateConstantBuffer(m_PBRDebugConstantBuffer);
 
     // TODO struct buffers test
-    // m_colorsStructuredBuffer = renderer->CreateBuffer(sizeof(ColorInfo) * 2, sizeof(ColorInfo), BufferType::Structured, false);
+    m_colorsStructuredBuffer = renderer->CreateBuffer(sizeof(ColorInfo) * 2, sizeof(ColorInfo), BufferType::Structured, false);
 }
 
 void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
@@ -202,13 +202,13 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     m_PBRDebugConstantBuffer->Unmap(0, 0);
 
     // TODO struct buffers test
-    // ColorInfo colors[2];
-    // colors[0].Color = { 1.0, 0.0, 0.0 };
-    // colors[1].Color = { 0.0, 1.0, 0.0 };
-    // void* data9;
-    // m_colorsStructuredBuffer->Map(0, 0, &data9);
-    // memcpy(data9, &colors, sizeof(ColorInfo) * 2);
-    // m_colorsStructuredBuffer->Unmap(0, 0);
+    ColorInfo colors[2];
+    colors[0].Color = { 1.0, 0.0, 0.0 };
+    colors[1].Color = { 0.0, 1.0, 0.0 };
+    void* data9;
+    m_colorsStructuredBuffer->Map(0, 0, &data9);
+    memcpy(data9, &colors, sizeof(ColorInfo) * 2);
+    m_colorsStructuredBuffer->Unmap(0, 0);
 
     auto backbuffer = renderer->GetBackBuffer();
     commandList->BindRenderTargets({ backbuffer }, nullptr);
@@ -222,7 +222,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindConstantBuffer(m_PBRDebugConstantBuffer, 6); // TODO remove this when PBR done
-    // commandList->SetGraphicsShaderResource(m_colorsStructuredBuffer, 7); // TODO struct buffers test
+    commandList->SetGraphicsShaderResource(m_colorsStructuredBuffer, 7); // TODO struct buffers test
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
 

@@ -61,8 +61,8 @@ CorvusEditor::CorvusEditor()
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 5;
-        constexpr int column = 5;
+        constexpr int row = 4;
+        constexpr int column = 4;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
     

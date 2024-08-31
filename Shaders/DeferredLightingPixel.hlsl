@@ -1,12 +1,12 @@
 ﻿#include "Shaders/PBR.hlsl"
 
-// struct ColorInfo
-// {
-//     float3 Color;
-//     float Padding;
-// };
-//
-// StructuredBuffer<ColorInfo> ColorInfoBuffer : register(t7);
+struct ColorInfo
+{
+    float3 Color;
+    float Padding;
+};
+
+StructuredBuffer<ColorInfo> ColorInfosBuffer : register(t7, space1);
 
 struct VertexOut {
     float4 Position : SV_POSITION;
@@ -36,8 +36,8 @@ float4 Main(VertexOut Input) : SV_TARGET
     float3 positionWS = WorldPosition.Sample(Sampler, Input.Texcoord.xy).xyz;
     float depth = Depth.Sample(Sampler, Input.Texcoord.xy).x;
 
-    // float4 lightColor = float4(ColorInfoBuffer[0].Color, 1.0);
-    float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
+    float4 lightColor = float4(ColorInfosBuffer[0].Color, 1.0);
+    // float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
     float3 dirLightVec = normalize(DirLightDirection) * -1.0f; // l (norm vec pointing toward light direction)
 
     // basic Phong lighting for directional

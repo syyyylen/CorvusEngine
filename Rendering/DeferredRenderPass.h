@@ -39,5 +39,5 @@ private:
     std::shared_ptr<Buffer> m_PBRDebugConstantBuffer;
 
     // TODO debug structured buffers
-    // std::shared_ptr<Buffer> m_colorsStructuredBuffer;
+    std::shared_ptr<Buffer> m_colorsStructuredBuffer;
 };
