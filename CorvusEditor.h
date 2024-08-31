@@ -76,4 +76,6 @@ private:
     PBRDebugSettings m_PBRDebugSettings;
 
     int m_viewMode;
+
+    bool m_displayUI = true;
 };

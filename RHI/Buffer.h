@@ -9,7 +9,7 @@ enum class BufferType
     Vertex,
     Index,
     Constant,
-    Storage,
+    Structured,
     Copy
 };
 

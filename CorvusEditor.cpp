@@ -54,13 +54,15 @@ CorvusEditor::CorvusEditor()
     // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
-    if(true)
+
+    constexpr bool pointLightsDemo = true;
+    if(pointLightsDemo)
     {
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 14;
-        constexpr int column = 10;
+        constexpr int row = 5;
+        constexpr int column = 5;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
     
@@ -72,19 +74,18 @@ CorvusEditor::CorvusEditor()
                 float posZ = space * (float)j;
 
                 if(i % 2 == 0)
-                    AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, { 0.0f, 0.0f, 0.0f }, { 0.25f, 0.25f, 0.25f });
+                {
+                    AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, {}, { 0.25f, 0.25f, 0.25f });
+                }
                 else
                     AddLightToScene({ posX, 1.0f, posZ }, {}, true);
             }
         }
     }
-    // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
-
-    if(false)
+    else
     {
-        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 180.0f, 0.0f, -90.0f });
-        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 3.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
-        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", { 6.0f, 0.0f, 0.0f }, { 180.0f, 0.0f, -90.0f });
+        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 90.0f, 180.0f, 0.0f });
+        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", { 3.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
     }
 
     m_startTime = clock();
@@ -182,67 +183,70 @@ void CorvusEditor::Run()
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
         
-        commandList->BindRenderTargets({ backbuffer }, nullptr);
-
-        m_renderer->BeginImGuiFrame();
-
-        if (ImGui::BeginMainMenuBar())
+        if(m_displayUI)
         {
-            if (ImGui::BeginMenu("File"))
+            commandList->BindRenderTargets({ backbuffer }, nullptr);
+
+            m_renderer->BeginImGuiFrame();
+
+            if (ImGui::BeginMainMenuBar())
             {
-                if (ImGui::MenuItem("Exit", "Alt+F4")) {
-                    m_window->Close();
+                if (ImGui::BeginMenu("File"))
+                {
+                    if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                        m_window->Close();
+                    }
+                    ImGui::EndMenu();
                 }
-                ImGui::EndMenu();
+
+                ImGui::EndMainMenuBar();
             }
 
-            ImGui::EndMainMenuBar();
+            ImGui::Begin("FrameRate");
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::End();
+
+            ImGui::Begin("Debug");
+            ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
+            ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
+            static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "Debug" };
+            ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
+            ImGui::Separator();
+            ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
+            ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
+            ImGui::Separator();
+            ImGui::SliderFloat("PBR Roughness", &m_PBRDebugSettings.Roughness, 0.0f, 1.0f);
+            ImGui::SliderFloat("PBR Metallic", &m_PBRDebugSettings.Metallic, 0.0f, 1.0f);
+            ImGui::End();
+
+            ImGui::Begin("Debug Point Lights");
+            ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
+            ImGui::Checkbox("Move", &m_movePointLights);
+            ImGui::Separator();
+            ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
+            ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
+            ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
+            ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
+            // float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
+            // ImGui::ColorEdit4("Color", color);
+            // m_testLightColor.x = color[0];
+            // m_testLightColor.y = color[1];
+            // m_testLightColor.z = color[2];
+            // m_testLightColor.w = color[3];
+            ImGui::End();
+
+            auto GBuffer = deferredPass->GetGBuffer();
+            
+            ImGui::Begin("Debug GBuffer");
+            ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+            ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+            ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+            ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
+            ImGui::End();
+            
+            m_renderer->EndImGuiFrame();
         }
-
-        ImGui::Begin("FrameRate");
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::End();
-
-        ImGui::Begin("Debug");
-        ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
-        ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "Debug" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
-        ImGui::Separator();
-        ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
-        ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
-        ImGui::Separator();
-        ImGui::SliderFloat("PBR Roughness", &m_PBRDebugSettings.Roughness, 0.0f, 1.0f);
-        ImGui::SliderFloat("PBR Metallic", &m_PBRDebugSettings.Metallic, 0.0f, 1.0f);
-        ImGui::End();
-
-        ImGui::Begin("Debug Point Lights");
-        ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
-        ImGui::Checkbox("Move", &m_movePointLights);
-        ImGui::Separator();
-        ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
-        ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
-        ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
-        ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
-        // float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
-        // ImGui::ColorEdit4("Color", color);
-        // m_testLightColor.x = color[0];
-        // m_testLightColor.y = color[1];
-        // m_testLightColor.z = color[2];
-        // m_testLightColor.w = color[3];
-        ImGui::End();
-
-        auto GBuffer = deferredPass->GetGBuffer();
         
-        ImGui::Begin("Debug GBuffer");
-        ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-        ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-        ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
-        ImGui::End();
-        
-        m_renderer->EndImGuiFrame();
-
         commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_PRESENT);
         commandList->End();
         m_renderer->ExecuteCommandBuffers({ commandList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -284,8 +288,8 @@ void CorvusEditor::AddModelToScene(const std::string& modelPath, const std::stri
 
     DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
     mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.x));
-    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.y));
-    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.z));
+    mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(rotation.y));
+    mat *= DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(rotation.z));
     mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
     mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
     DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
@@ -357,6 +361,8 @@ void CorvusEditor::OnKeyUp(int key)
         m_lastMousePos[0] = width/2.0f;
         m_lastMousePos[1] = height/2.0f;
     }
+    else if(key == 'R')
+        m_displayUI = !m_displayUI;
 }
 
 void CorvusEditor::OnMouseMove(const InputListener::Vec2& mousePosition)

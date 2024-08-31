@@ -3,7 +3,7 @@
 Buffer::Buffer(std::shared_ptr<Allocator> allocator, uint64_t size, uint64_t stride, BufferType type, bool readback) : m_size(size)
 {
     D3D12MA::ALLOCATION_DESC AllocationDesc = {};
-    AllocationDesc.HeapType = readback == true ? D3D12_HEAP_TYPE_READBACK : ((type == BufferType::Constant || type == BufferType::Copy) ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
+    AllocationDesc.HeapType = readback == true ? D3D12_HEAP_TYPE_READBACK : ((type == BufferType::Constant || type == BufferType::Copy || type == BufferType::Structured ) ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT);
 
     D3D12_RESOURCE_DESC ResourceDesc = {};
     ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -18,7 +18,7 @@ Buffer::Buffer(std::shared_ptr<Allocator> allocator, uint64_t size, uint64_t str
     ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    m_state = type == BufferType::Constant ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COMMON;
+    m_state = type == BufferType::Constant || type == BufferType::Structured ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COMMON;
 
     m_resource = allocator->Allocate(&AllocationDesc, &ResourceDesc, m_state);
 

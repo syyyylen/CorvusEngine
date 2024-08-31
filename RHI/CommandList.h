@@ -37,8 +37,9 @@ public:
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
     void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
-    void Draw(int vertexCount);
-    void DrawIndexed(int indexCount);
+    void SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx);
+    void Draw(int vertexCount, int instanceCount = 1);
+    void DrawIndexed(int indexCount, int instanceCount = 1);
     void CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src);
     void CopyBufferToBuffer(std::shared_ptr<Buffer> dst, std::shared_ptr<Buffer> src);
     void CopyBufferToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Buffer> src);

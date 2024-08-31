@@ -148,14 +148,19 @@ void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
     m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
 }
 
-void CommandList::Draw(int vertexCount)
+void CommandList::SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx)
 {
-    m_commandList->DrawInstanced(vertexCount, 1, 0, 0);
+    m_commandList->SetGraphicsRootShaderResourceView(idx, buffer->GetResource().Resource->GetGPUVirtualAddress());
 }
 
-void CommandList::DrawIndexed(int indexCount)
+void CommandList::Draw(int vertexCount, int instanceCount)
 {
-    m_commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+    m_commandList->DrawInstanced(vertexCount, instanceCount, 0, 0);
+}
+
+void CommandList::DrawIndexed(int indexCount, int instanceCount)
+{
+    m_commandList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 }
 
 void CommandList::CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src)
