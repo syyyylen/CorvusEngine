@@ -74,6 +74,8 @@ void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glob
     {
         auto& material = renderItem->GetMaterial();
 
+        commandList->BindConstantBuffer(renderItem->m_objectConstantBuffer, 1);
+
         if(material.HasAlbedo)
             commandList->BindGraphicsShaderResource(material.Albedo, 3);
 
@@ -83,7 +85,6 @@ void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glob
         const auto primitives = renderItem->GetPrimitives();
         for(const auto& primitive : primitives)
         {
-            commandList->BindConstantBuffer(primitive.m_objectConstantBuffer, 1);
             commandList->BindVertexBuffer(primitive.m_vertexBuffer);
             commandList->BindIndexBuffer(primitive.m_indicesBuffer);
             commandList->DrawIndexed(primitive.m_indexCount);

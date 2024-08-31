@@ -89,9 +89,6 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
     // TODO remove this when PBR done
     m_PBRDebugConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_PBRDebugConstantBuffer);
-
-    // TODO struct buffers test
-    m_colorsStructuredBuffer = renderer->CreateBuffer(sizeof(ColorInfo) * 2, sizeof(ColorInfo), BufferType::Structured, false);
 }
 
 void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
@@ -164,6 +161,30 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     {
         auto& material = renderItem->GetMaterial();
 
+        commandList->BindConstantBuffer(renderItem->m_objectConstantBuffer, 1);
+
+        if(renderItem->GetInstanceCount() > 1 ) // TODO remove all this nasty hard coding
+        {
+            std::vector<DirectX::XMFLOAT4X4> instancesInfo;
+
+            auto instancesPositions = renderItem->GetInstancesPositions();
+            for(auto instancePosition : instancesPositions)
+            {
+                DirectX::XMFLOAT4X4 instanceInfo = renderItem->GetTransform();
+                DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&instanceInfo);
+                mat *= DirectX::XMMatrixTranslation(instancePosition.x, instancePosition.y, instancePosition.z);
+                DirectX::XMStoreFloat4x4(&instanceInfo, mat);
+                instancesInfo.emplace_back(instanceInfo);
+            }
+
+            void* data2;
+            renderItem->m_instancesDataBuffer->Map(0, 0, &data2);
+            memcpy(data2, &instancesInfo, sizeof(DirectX::XMFLOAT4X4) * instancesInfo.size());
+            renderItem->m_instancesDataBuffer->Unmap(0, 0);
+
+            commandList->SetGraphicsShaderResource(renderItem->m_instancesDataBuffer, 5);
+        }
+
         if(material.HasAlbedo)
             commandList->BindGraphicsShaderResource(material.Albedo, 3);
 
@@ -173,10 +194,9 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         const auto primitives = renderItem->GetPrimitives();
         for(const auto& primitive : primitives)
         {
-            commandList->BindConstantBuffer(primitive.m_objectConstantBuffer, 1);
             commandList->BindVertexBuffer(primitive.m_vertexBuffer);
             commandList->BindIndexBuffer(primitive.m_indicesBuffer);
-            commandList->DrawIndexed(primitive.m_indexCount);
+            commandList->DrawIndexed(primitive.m_indexCount, renderItem->GetInstanceCount());
         }
     }
 
@@ -201,15 +221,6 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     memcpy(data3, &m_PBRDebugSettings, sizeof(PBRDebugSettings));
     m_PBRDebugConstantBuffer->Unmap(0, 0);
 
-    // TODO struct buffers test
-    ColorInfo colors[2];
-    colors[0].Color = { 1.0, 0.0, 0.0 };
-    colors[1].Color = { 0.0, 1.0, 0.0 };
-    void* data9;
-    m_colorsStructuredBuffer->Map(0, 0, &data9);
-    memcpy(data9, &colors, sizeof(ColorInfo) * 2);
-    m_colorsStructuredBuffer->Unmap(0, 0);
-
     auto backbuffer = renderer->GetBackBuffer();
     commandList->BindRenderTargets({ backbuffer }, nullptr);
     
@@ -222,7 +233,6 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindConstantBuffer(m_PBRDebugConstantBuffer, 6); // TODO remove this when PBR done
-    commandList->SetGraphicsShaderResource(m_colorsStructuredBuffer, 7); // TODO struct buffers test
     commandList->BindVertexBuffer(m_screenQuadVertexBuffer);
     commandList->Draw(4);
 
@@ -250,12 +260,12 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
         mat *= DirectX::XMMatrixScaling(radius, radius, radius);
         mat *= DirectX::XMMatrixTranslation(globalPassData.PointLights[i].Position.x, globalPassData.PointLights[i].Position.y, globalPassData.PointLights[i].Position.z);
-        DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform, mat);
+        DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetTransform(), mat);
 
         ObjectConstantBuffer objCbuf;
         objCbuf.HasAlbedo = m_pointLightMesh->GetMaterial().HasAlbedo;
         objCbuf.HasNormalMap = m_pointLightMesh->GetMaterial().HasNormal;
-        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetPrimitives()[0].Transform);
+        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetTransform());
         DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
 
         auto constantBuffer = m_lightsConstantBuffers[i];

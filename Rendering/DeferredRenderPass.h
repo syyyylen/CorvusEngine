@@ -37,7 +37,4 @@ private:
     // TODO remove this when PBR done
     PBRDebugSettings m_PBRDebugSettings = {};
     std::shared_ptr<Buffer> m_PBRDebugConstantBuffer;
-
-    // TODO debug structured buffers
-    std::shared_ptr<Buffer> m_colorsStructuredBuffer;
 };

@@ -2,6 +2,8 @@
 
 RenderItem::RenderItem()
 {
+    DirectX::XMMATRIX identityMatrix = DirectX::XMMatrixIdentity();
+    DirectX::XMStoreFloat4x4(&m_transform, identityMatrix);
 }
 
 RenderItem::~RenderItem()
@@ -25,7 +27,7 @@ void RenderItem::ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMes
 {
     Primitive out;
     DirectX::XMMATRIX identityMatrix = DirectX::XMMatrixIdentity();
-    DirectX::XMStoreFloat4x4(&out.Transform, identityMatrix);
+    DirectX::XMStoreFloat4x4(&out.LocalPrimTransform, identityMatrix);
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;

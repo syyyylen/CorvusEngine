@@ -14,8 +14,9 @@ public:
     CorvusEditor();
     ~CorvusEditor();
 
-    void AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
-        DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f }, DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f }, bool transparent = false);
+    std::shared_ptr<RenderItem> AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
+        DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f }, DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f },
+        bool transparent = false, bool instanced = false);
     void AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f }, bool randomColor = false);
     void Run();
 

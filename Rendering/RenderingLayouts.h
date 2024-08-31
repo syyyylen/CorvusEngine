@@ -39,7 +39,7 @@ struct ObjectConstantBuffer
     DirectX::XMFLOAT4X4 World;
     int HasAlbedo = false;
     int HasNormalMap = false;
-    int Padding1;
+    int IsInstanced = false;
     int Padding2;
 };
 

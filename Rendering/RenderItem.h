@@ -25,10 +25,9 @@ struct Vertex
 
 struct Primitive
 {
-    DirectX::XMFLOAT4X4 Transform;
+    DirectX::XMFLOAT4X4 LocalPrimTransform; // Local Prim Transform, in Object Space
     std::shared_ptr<Buffer> m_vertexBuffer;
     std::shared_ptr<Buffer> m_indicesBuffer;
-    std::shared_ptr<Buffer> m_objectConstantBuffer;
     int m_vertexCount;
     int m_indexCount;
 };
@@ -40,14 +39,25 @@ public:
     ~RenderItem();
     
     void ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string filePath);
+    void SetInstanceCount(int instanceCount) { m_instanceCount = instanceCount; }
 
     std::vector<Primitive>& GetPrimitives() { return m_primitives; }
     Material& GetMaterial() { return m_material; }
+    DirectX::XMFLOAT4X4& GetTransform() { return m_transform; } // Object World Transform
+    int GetInstanceCount() const { return m_instanceCount; }
+    std::vector<DirectX::XMFLOAT3>& GetInstancesPositions() { return m_instancesPosition; }
 
+    std::shared_ptr<Buffer> m_instancesDataBuffer = nullptr;
+    std::shared_ptr<Buffer> m_objectConstantBuffer;
+    
 private:
     void ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh *mesh, const aiScene *scene);
     void ProcessNode(std::shared_ptr<D3D12Renderer> renderer, aiNode *node, const aiScene *scene);
 
+    DirectX::XMFLOAT4X4 m_transform;
     std::vector<Primitive> m_primitives;
     Material m_material;
+    
+    int m_instanceCount = 1;
+    std::vector<DirectX::XMFLOAT3> m_instancesPosition;
 };

@@ -11,7 +11,16 @@ cbuffer ObjectCbuf : register(b1)
     column_major float4x4 World;
     bool HasAlbedo;
     bool HasNormalMap;
+    bool IsInstanced;
+    bool Padding;
 };
+
+// struct InstanceData
+// {
+//     column_major float4x4 WorldMat;
+// };
+//
+// StructuredBuffer<InstanceData> InstancesData : register(t5);
 
 struct VertexIn
 {
@@ -36,9 +45,10 @@ struct VertexOut
     row_major float3x3 tbn : TEXCOORD7;
 };
 
-VertexOut Main(VertexIn Input)
+VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
 {
     VertexOut Output;
+    // float4x4 WorldMat = IsInstanced ? InstancesData[InstanceID].WorldMat : World;
     Output.PositionWS = mul(float4(Input.position, 1.0), World).xyz;
     Output.Position = mul(float4(Output.PositionWS, 1.0), ViewProj);
     Output.normal = normalize(mul(Input.normal, (float3x3)World));

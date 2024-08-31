@@ -65,6 +65,9 @@ CorvusEditor::CorvusEditor()
         constexpr int column = 4;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
+
+        auto dragonModel = AddModelToScene("Assets/dragon.obj", "", "", { 0.0f, 0.0f, 0.0f }, {},
+            { 0.25f, 0.25f, 0.25f }, false, false /* true */);
     
         for(int i = 0; i < row; i++)
         {
@@ -75,12 +78,17 @@ CorvusEditor::CorvusEditor()
 
                 if(i % 2 == 0)
                 {
-                    AddModelToScene("Assets/dragon.obj", "", "", { posX, 0.0f, posZ }, {}, { 0.25f, 0.25f, 0.25f });
+                    // TODO handle instancing more elegantly
+                    DirectX::XMFLOAT3 pos = { posX, 0.0f, posZ }; 
+                    // dragonModel->GetInstancesPositions().emplace_back(pos);
+                    AddModelToScene("Assets/dragon.obj", "", "", pos, {}, { 0.25f, 0.25f, 0.25f });
                 }
                 else
                     AddLightToScene({ posX, 1.0f, posZ }, {}, true);
             }
         }
+
+        // dragonModel->SetInstanceCount(row + column);
     }
     else
     {
@@ -260,7 +268,8 @@ void CorvusEditor::Run()
     }
 }
 
-void CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent)
+std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, DirectX::XMFLOAT3 position,
+    DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
 {
     auto model = std::make_shared<RenderItem>();
     model->ImportMesh(m_renderer, modelPath);
@@ -286,29 +295,34 @@ void CorvusEditor::AddModelToScene(const std::string& modelPath, const std::stri
     if(uploader.HasCommands())
         m_renderer->FlushUploader(uploader);
 
-    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetTransform());
     mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.x));
     mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(rotation.y));
     mat *= DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(rotation.z));
     mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
     mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-    DirectX::XMStoreFloat4x4(&model->GetPrimitives()[0].Transform, mat);
+    DirectX::XMStoreFloat4x4(&model->GetTransform(), mat);
 
     ObjectConstantBuffer objCbuf;
     objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
     objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
-    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetPrimitives()[0].Transform);
+    objCbuf.IsInstanced = instanced;
+    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetTransform());
     DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
 
-    model->GetPrimitives()[0].m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    m_renderer->CreateConstantBuffer(model->GetPrimitives()[0].m_objectConstantBuffer);
+    model->m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    m_renderer->CreateConstantBuffer(model->m_objectConstantBuffer);
 
     void* objCbufData;
-    model->GetPrimitives()[0].m_objectConstantBuffer->Map(0, 0, &objCbufData);
+    model->m_objectConstantBuffer->Map(0, 0, &objCbufData);
     memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-    model->GetPrimitives()[0].m_objectConstantBuffer->Unmap(0, 0);
+    model->m_objectConstantBuffer->Unmap(0, 0);
+
+    if(instanced) // TODO remove all this nasty hard coding
+        model->m_instancesDataBuffer = m_renderer->CreateBuffer(256 * 6, sizeof(DirectX::XMFLOAT4X4), BufferType::Structured, false);
 
     transparent ? m_transparentRenderItems.push_back(model) : m_opaqueRenderItems.push_back(model);
+    return model;
 }
 
 void CorvusEditor::AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color, bool randomColor)
