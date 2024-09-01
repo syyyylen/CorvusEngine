@@ -111,8 +111,10 @@ Device::Device()
 Device::~Device()
 {
     m_device->Release();
+#if ENABLE_DEBUG_LAYER
     m_debug->Release();
     m_debugDevice->Release();
+#endif
     m_factory->Release();
     m_adapter->Release();
 }

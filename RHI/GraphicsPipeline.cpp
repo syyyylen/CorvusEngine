@@ -71,10 +71,26 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     }
 
     std::sort(ShaderBinds.begin(), ShaderBinds.begin() + BindCount, CompareShaderInput);
+    std::vector<LPCSTR> processedBinds;
 
     for(int ShaderBindIndex = 0; ShaderBindIndex < BindCount; ShaderBindIndex++)
     {
         D3D12_SHADER_INPUT_BIND_DESC ShaderInputBindDesc = ShaderBinds[ShaderBindIndex];
+
+        bool alrdyProcessed = false;
+        for(auto processedBindName : processedBinds)
+        {
+            if(strcmp(processedBindName, ShaderInputBindDesc.Name) == 0)
+            {
+                alrdyProcessed = true;
+                break;
+            }
+        }
+        
+        if(alrdyProcessed)
+            continue;
+        
+        processedBinds.emplace_back(ShaderInputBindDesc.Name);
 
         bool isStructuredBuffer = ShaderInputBindDesc.Type == D3D_SIT_STRUCTURED;
         

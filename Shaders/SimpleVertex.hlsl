@@ -37,12 +37,7 @@ struct VertexOut
     float3 PositionWS : TEXCOORD0;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD1;
-    float time : TEXCOORD2;
-    bool HasAlbedo : TEXCOORD3;
-    bool HasNormalMap : TEXCOORD4;
-    float3 CameraPosition : TEXCOORD5;
-    int Mode : TEXCOORD6;
-    row_major float3x3 tbn : TEXCOORD7;
+    row_major float3x3 tbn : TEXCOORD2;
 };
 
 VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
@@ -57,12 +52,6 @@ VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
     Output.tbn[0] = normalize(mul(Input.tangent, (float3x3)WorldMat));
     Output.tbn[1] = normalize(mul(Input.binormal, (float3x3)WorldMat));
     Output.tbn[2] = normalize(mul(Input.normal, (float3x3)WorldMat));
-
-    Output.time = Time;
-    Output.HasAlbedo = HasAlbedo;
-    Output.HasNormalMap = HasNormalMap;
-    Output.CameraPosition = CameraPosition;
-    Output.Mode = Mode;
 
     return Output;
 }

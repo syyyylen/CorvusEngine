@@ -17,7 +17,7 @@ struct PointLight
     float Padding3;
 };
 
-StructuredBuffer<PointLight> InstancesData : register(t5, space2);
+StructuredBuffer<PointLight> InstancesData2 : register(t5, space2);
 
 struct PixelIn
 {
@@ -35,7 +35,7 @@ float DoAttenuation(PointLight light, float distance)
 
 float4 Main(PixelIn Input) : SV_TARGET
 {
-    PointLight lightInfo = InstancesData[Input.InstanceIdx];
+    PointLight lightInfo = InstancesData2[Input.InstanceIdx];
     float4 albedo = float4(Albedo.Load(int3(Input.Position.xy, 0)).xyz, 1.0);
     float3 normal = normalize(Normal.Load(int3(Input.Position.xy, 0)).xyz);
     float3 positionWS = WorldPosition.Load(int3(Input.Position.xy, 0)).xyz;
