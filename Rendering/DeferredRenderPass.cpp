@@ -1,11 +1,5 @@
 ﻿#include "DeferredRenderPass.h"
 
-struct ColorInfo
-{
-    DirectX::XMFLOAT3 Color;
-    float Padding;
-};
-
 void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
 {
     m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
@@ -74,17 +68,8 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
 
     m_pointLightMesh = std::make_shared<RenderItem>();
     m_pointLightMesh->ImportMesh(renderer, "Assets/sphere.gltf");
-
-    for(int i = 0; i < MAX_LIGHTS; i++)
-    {
-        auto lightConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-        renderer->CreateConstantBuffer(lightConstantBuffer);
-        m_lightsConstantBuffers.emplace_back(lightConstantBuffer);
-
-        auto lightInfoConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-        renderer->CreateConstantBuffer(lightInfoConstantBuffer);
-        m_lightsInfosConstantBuffers.emplace_back(lightInfoConstantBuffer);
-    }
+    m_instancedLightsInstanceDataTransformBuffer = renderer->CreateBuffer(sizeof(InstanceData) * MAX_LIGHTS, sizeof(InstanceData), BufferType::Structured, false);
+    m_instancedLightsInstanceDataInfoBuffer = renderer->CreateBuffer(sizeof(PointLight) * MAX_LIGHTS, sizeof(PointLight), BufferType::Structured, false);
 
     // TODO remove this when PBR done
     m_PBRDebugConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
@@ -252,41 +237,33 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.WorldPositionRenderTarget, 4);
-    commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
 
+    std::vector<InstanceData> instancesData;
     for(int i = 0; i < globalPassData.PointLights.size(); i++)
     {
         float radius = globalPassData.PointLights[i].Radius;
 
+        InstanceData instanceData;
         DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
         mat *= DirectX::XMMatrixScaling(radius, radius, radius);
         mat *= DirectX::XMMatrixTranslation(globalPassData.PointLights[i].Position.x, globalPassData.PointLights[i].Position.y, globalPassData.PointLights[i].Position.z);
-        DirectX::XMStoreFloat4x4(&m_pointLightMesh->GetTransform(), mat);
-
-        ObjectConstantBuffer objCbuf;
-        objCbuf.HasAlbedo = m_pointLightMesh->GetMaterial().HasAlbedo;
-        objCbuf.HasNormalMap = m_pointLightMesh->GetMaterial().HasNormal;
-        DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_pointLightMesh->GetTransform());
-        DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
-
-        auto constantBuffer = m_lightsConstantBuffers[i];
-
-        void* objCbufData;
-        constantBuffer->Map(0, 0, &objCbufData);
-        memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-        constantBuffer->Unmap(0, 0);
-
-        auto infosConstantBuffer = m_lightsInfosConstantBuffers[i];
-
-        void* infoCbufData;
-        infosConstantBuffer->Map(0, 0, &infoCbufData);
-        memcpy(infoCbufData, &globalPassData.PointLights[i], sizeof(PointLight));
-        infosConstantBuffer->Unmap(0, 0);
-
-        commandList->BindConstantBuffer(constantBuffer, 1);
-        commandList->BindConstantBuffer(infosConstantBuffer, 7);
-        commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
-        commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
-        commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount);
+        DirectX::XMStoreFloat4x4(&instanceData.WorldMat, DirectX::XMMatrixTranspose(mat));
+        instancesData.emplace_back(instanceData);
     }
+
+    void* dt;
+    m_instancedLightsInstanceDataTransformBuffer->Map(0, 0, &dt);
+    memcpy(dt, instancesData.data(), sizeof(InstanceData) * globalPassData.PointLights.size());
+    m_instancedLightsInstanceDataTransformBuffer->Unmap(0, 0);
+
+    void* dt2;
+    m_instancedLightsInstanceDataInfoBuffer->Map(0, 0, &dt2);
+    memcpy(dt2, globalPassData.PointLights.data(), sizeof(PointLight) * globalPassData.PointLights.size());
+    m_instancedLightsInstanceDataInfoBuffer->Unmap(0, 0);
+
+    commandList->SetGraphicsShaderResource(m_instancedLightsInstanceDataTransformBuffer, 1);
+    commandList->SetGraphicsShaderResource(m_instancedLightsInstanceDataInfoBuffer, 5);
+    commandList->BindVertexBuffer(m_pointLightMesh->GetPrimitives()[0].m_vertexBuffer);
+    commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
+    commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount, globalPassData.PointLights.size());
 }

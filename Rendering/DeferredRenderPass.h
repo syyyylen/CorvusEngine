@@ -29,8 +29,8 @@ private:
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_screenQuadVertexBuffer;
     std::shared_ptr<RenderItem> m_pointLightMesh;
-    std::vector<std::shared_ptr<Buffer>> m_lightsConstantBuffers;
-    std::vector<std::shared_ptr<Buffer>> m_lightsInfosConstantBuffers;
+    std::shared_ptr<Buffer> m_instancedLightsInstanceDataTransformBuffer;
+    std::shared_ptr<Buffer> m_instancedLightsInstanceDataInfoBuffer;
     
     GBuffer m_GBuffer;
 

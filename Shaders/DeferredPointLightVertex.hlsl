@@ -6,12 +6,12 @@
     int Mode;
 };
 
-cbuffer ObjectCbuf : register(b1)
+struct InstanceData
 {
-    column_major float4x4 World;
-    bool HasAlbedo;
-    bool HasNormalMap;
+    column_major float4x4 WorldMat;
 };
+
+StructuredBuffer<InstanceData> InstancesData : register(t1, space1);
 
 struct VertexIn
 {
@@ -28,16 +28,18 @@ struct VertexOut
     float3 CameraPosition : TEXCOORD0;
     float3 ObjectPosition : TEXCOORD1;
     int Mode : TEXCOORD2;
+    int InstanceIdx : TEXCOORD3;
 };
 
-VertexOut Main(VertexIn Input)
+VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
 {
     VertexOut Output;
-    float3 positionWS = mul(float4(Input.position, 1.0), World).xyz;
+    float3 positionWS = mul(float4(Input.position, 1.0), InstancesData[InstanceID].WorldMat).xyz;
     Output.Position = mul(float4(positionWS, 1.0), ViewProj);
     Output.CameraPosition = CameraPosition;
-    Output.ObjectPosition = float3(World[3].xyz);
+    Output.ObjectPosition = float3(InstancesData[InstanceID].WorldMat[3].xyz);
     Output.Mode = Mode;
+    Output.InstanceIdx = InstanceID;
 
     return Output;
 }
