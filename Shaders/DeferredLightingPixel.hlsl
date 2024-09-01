@@ -52,8 +52,8 @@ float4 Main(VertexOut Input) : SV_TARGET
         return float4(depth, 0.0, 0.0, 1.0);
     case 4:
         return float4(positionWS, 1.0);
-    case 5: // Debug
-        return float4(finalLight, 1.0);
+    case 5:
+        return float4(metallicRoughness, 1.0);
     default:
         return float4(finalLight, 1.0);
     }

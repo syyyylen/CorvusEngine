@@ -55,7 +55,7 @@ CorvusEditor::CorvusEditor()
 
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
-    constexpr bool pointLightsDemo = false;
+    constexpr bool pointLightsDemo = true;
     if(pointLightsDemo)
     {
         m_dirLightIntensity = 0.1f;
@@ -218,7 +218,7 @@ void CorvusEditor::Run()
             ImGui::Begin("Debug");
             ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
             ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
-            static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "Debug" };
+            static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
             ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
             ImGui::Separator();
             ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
