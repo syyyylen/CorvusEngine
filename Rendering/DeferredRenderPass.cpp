@@ -224,6 +224,9 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------
 
+    if(globalPassData.PointLights.empty())
+        return;
+
     // TODO remove this when PBR done
     void* data4;
     m_PBRDebugConstantBuffer->Map(0, 0, &data4);

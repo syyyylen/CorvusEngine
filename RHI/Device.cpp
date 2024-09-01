@@ -1,9 +1,14 @@
 ﻿#include "Device.h"
 #include <dxgi1_6.h>
 
+#define ENABLE_DEBUG_LAYER 0
+
 Device::Device()
 {
-    HRESULT hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debug));
+    HRESULT hr;
+
+#if ENABLE_DEBUG_LAYER
+    hr = D3D12GetDebugInterface(IID_PPV_ARGS(&m_debug));
     if(FAILED(hr))
     {
         LOG(Error, "Device : failed to get debug interface !");
@@ -11,6 +16,7 @@ Device::Device()
         LOG(Error, errorMsg);
     }
     m_debug->EnableDebugLayer();
+#endif
 
     hr = CreateDXGIFactory(IID_PPV_ARGS(&m_factory));
     if(FAILED(hr))
@@ -59,6 +65,7 @@ Device::Device()
         LOG(Error, errorMsg);
     }
 
+#if ENABLE_DEBUG_LAYER
     hr = m_device->QueryInterface(IID_PPV_ARGS(&m_debugDevice));
     if(FAILED(hr))
     {
@@ -66,7 +73,7 @@ Device::Device()
         std::string errorMsg = std::system_category().message(hr);
         LOG(Error, errorMsg);
     }
-
+    
     ID3D12InfoQueue* InfoQueue = 0;
     m_device->QueryInterface(IID_PPV_ARGS(&InfoQueue));
 
@@ -92,6 +99,7 @@ Device::Device()
 
     InfoQueue->PushStorageFilter(&filter);
     InfoQueue->Release();
+#endif
 
     DXGI_ADAPTER_DESC Desc;
     m_adapter->GetDesc(&Desc);

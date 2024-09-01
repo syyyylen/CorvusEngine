@@ -13,8 +13,8 @@ public:
 
 private:
     ID3D12Device* m_device;
-    ID3D12Debug* m_debug;
-    ID3D12DebugDevice* m_debugDevice;
+    ID3D12Debug* m_debug = nullptr;
+    ID3D12DebugDevice* m_debugDevice = nullptr;
     IDXGIFactory3* m_factory;
     IDXGIAdapter1* m_adapter;
     
