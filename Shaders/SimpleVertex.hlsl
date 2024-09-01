@@ -12,7 +12,7 @@ cbuffer ObjectCbuf : register(b1)
     bool HasAlbedo;
     bool HasNormalMap;
     bool IsInstanced;
-    bool Padding;
+    bool HasMetallicRoughness;
 };
 
 struct InstanceData
@@ -20,7 +20,7 @@ struct InstanceData
     column_major float4x4 WorldMat;
 };
 
-StructuredBuffer<InstanceData> InstancesData : register(t5, space1);
+StructuredBuffer<InstanceData> InstancesData : register(t6, space1);
 
 struct VertexIn
 {

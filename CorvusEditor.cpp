@@ -55,7 +55,7 @@ CorvusEditor::CorvusEditor()
 
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
-    constexpr bool pointLightsDemo = true;
+    constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
     {
         m_dirLightIntensity = 0.1f;
@@ -66,7 +66,7 @@ CorvusEditor::CorvusEditor()
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
-        auto dragonModel = AddModelToScene("Assets/dragon.obj", "", "", { 0.0f, 0.0f, 0.0f }, {},
+        auto dragonModel = AddModelToScene("Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
             { 0.25f, 0.25f, 0.25f }, false, true);
 
         int instanceCount = 0;
@@ -91,10 +91,13 @@ CorvusEditor::CorvusEditor()
         dragonModel->SetInstanceCount(instanceCount);
         dragonModel->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * dragonModel->GetInstanceCount(), sizeof(InstanceData), BufferType::Structured, false);
     }
-    else
+    else // PBR Materials Demo
     {
-        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg", {}, { 90.0f, 180.0f, 0.0f });
-        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png", { 3.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+        m_dirLightIntensity = 3.5f;
+        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg",
+        "Assets/DamagedHelmet_metalRoughness.jpg",{}, { 90.0f, 0.0f, 0.0f });
+        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
+            "Assets/SciFiHelmet_MetallicRoughness.png", { 3.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
     }
 
     m_startTime = clock();
@@ -173,9 +176,6 @@ void CorvusEditor::Run()
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
 
-        auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass); // TODO remove this when PBR done
-        deferredPass->SetPBRDebugSettings(m_PBRDebugSettings);
-
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
         auto commandList = m_renderer->GetCurrentCommandList();
@@ -223,9 +223,6 @@ void CorvusEditor::Run()
             ImGui::Separator();
             ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
             ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
-            ImGui::Separator();
-            ImGui::SliderFloat("PBR Roughness", &m_PBRDebugSettings.Roughness, 0.0f, 1.0f);
-            ImGui::SliderFloat("PBR Metallic", &m_PBRDebugSettings.Metallic, 0.0f, 1.0f);
             ImGui::End();
 
             ImGui::Begin("Debug Point Lights");
@@ -236,20 +233,16 @@ void CorvusEditor::Run()
             ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
             ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
             ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
-            // float color[4] = { m_testLightColor.x, m_testLightColor.y, m_testLightColor.z, m_testLightColor.w };
-            // ImGui::ColorEdit4("Color", color);
-            // m_testLightColor.x = color[0];
-            // m_testLightColor.y = color[1];
-            // m_testLightColor.z = color[2];
-            // m_testLightColor.w = color[3];
             ImGui::End();
 
+            auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass); // TODO remove this when PBR done
             auto GBuffer = deferredPass->GetGBuffer();
             
             ImGui::Begin("Debug GBuffer");
             ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
             ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
             ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+            ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
             ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
             ImGui::End();
             
@@ -269,8 +262,8 @@ void CorvusEditor::Run()
     }
 }
 
-std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, DirectX::XMFLOAT3 position,
-    DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
+std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
+    DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
 {
     auto model = std::make_shared<RenderItem>();
     model->ImportMesh(m_renderer, modelPath);
@@ -278,6 +271,7 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
     Uploader uploader = m_renderer->CreateUploader();
     Image albedoImg;
     Image normalImg;
+    Image mrImg;
 
     if(!albedoPath.empty())
     {
@@ -291,6 +285,13 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
         auto normalTexture = m_resourceManager->LoadTexture(normalPath, uploader, normalImg);
         model->GetMaterial().HasNormal = true;
         model->GetMaterial().Normal = normalTexture;
+    }
+
+    if(!mrPath.empty())
+    {
+        auto mrTexture = m_resourceManager->LoadTexture(mrPath, uploader, mrImg);
+        model->GetMaterial().HasMetallicRoughness = true;
+        model->GetMaterial().MetallicRoughness = mrTexture;
     }
 
     if(uploader.HasCommands())
@@ -307,6 +308,7 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
     ObjectConstantBuffer objCbuf;
     objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
     objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
+    objCbuf.HasMetallicRoughness = model->GetMaterial().HasMetallicRoughness;
     objCbuf.IsInstanced = instanced;
     DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetTransform());
     DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));

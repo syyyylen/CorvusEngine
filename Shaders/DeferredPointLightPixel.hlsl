@@ -3,6 +3,7 @@
 Texture2D Albedo : register(t2);
 Texture2D Normal : register(t3);
 Texture2D WorldPosition : register(t4);
+Texture2D MetallicRoughness : register(t5);
 
 struct PointLight
 {
@@ -17,7 +18,7 @@ struct PointLight
     float Padding3;
 };
 
-StructuredBuffer<PointLight> InstancesData2 : register(t5, space2);
+StructuredBuffer<PointLight> InstancesData2 : register(t6, space2);
 
 struct PixelIn
 {
@@ -39,6 +40,7 @@ float4 Main(PixelIn Input) : SV_TARGET
     float4 albedo = float4(Albedo.Load(int3(Input.Position.xy, 0)).xyz, 1.0);
     float3 normal = normalize(Normal.Load(int3(Input.Position.xy, 0)).xyz);
     float3 positionWS = WorldPosition.Load(int3(Input.Position.xy, 0)).xyz;
+    float3 metallicRoughness = MetallicRoughness.Load(int3(Input.Position.xy, 0)).xyz;
 
     float3 view = normalize(Input.CameraPosition - positionWS);
 
@@ -50,8 +52,9 @@ float4 Main(PixelIn Input) : SV_TARGET
     float3 lightVector = normalize(l);
     float attenuation = DoAttenuation(lightInfo, d);
     float3 radiance = lightInfo.Color.xyz * attenuation;
+    float3 F0 = lerp(Fdielectric, albedo.xyz, metallicRoughness.b);
 
-    float3 finalLight = PBR(Fdielectric, normal, view, lightVector, normalize(lightVector + view), radiance, albedo.xyz, Roughness, Metallic); // TODO compute F0
+    float3 finalLight = PBR(F0, normal, view, lightVector, normalize(lightVector + view), radiance, albedo.xyz, metallicRoughness.g, metallicRoughness.b);
 
     return float4(finalLight, 1.0);
 }

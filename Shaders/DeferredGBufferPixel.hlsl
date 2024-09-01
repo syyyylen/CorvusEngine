@@ -4,12 +4,13 @@
     bool HasAlbedo;
     bool HasNormalMap;
     bool IsInstanced;
-    bool Padding;
+    bool HasMetallicRoughness;
 };
 
 SamplerState Sampler : register(s2);
 Texture2D Albedo : register(t3);
 Texture2D Normal : register(t4);
+Texture2D MetallicRoughness : register(t5);
 
 struct PixelIn
 {
@@ -25,6 +26,7 @@ struct PixelOut
     float3 Albedo : SV_TARGET0;
     float4 Normal : SV_TARGET1;
     float3 PositionWS : SV_TARGET2;
+    float3 MetallicRoughness : SV_TARGET3;
 };
 
 PixelOut Main(PixelIn Input)
@@ -32,6 +34,7 @@ PixelOut Main(PixelIn Input)
     PixelOut pixelOut;
     
     float4 albedo = float4(1.0, 1.0, 1.0, 1.0);
+    float3 metallicRoughness = float3(0.0f, 0.15f, 0.0f); // G roughness, B metallic
     float3 normal = Input.normal;
 
     if(HasAlbedo)
@@ -44,12 +47,19 @@ PixelOut Main(PixelIn Input)
         normalSampled.xyz = mul(normalSampled.xyz, Input.tbn);
         normal = normalSampled.xyz;
     }
-    
+
+    if(HasMetallicRoughness)
+    {
+        float3 mr = MetallicRoughness.Sample(Sampler, Input.uv).rgb;
+        metallicRoughness = float3(0.0f, mr.g, mr.b); 
+    }
+
     normal = normalize(normal);
 
     pixelOut.Albedo = albedo.xyz;
     pixelOut.Normal = float4(normal, 1.0);
     pixelOut.PositionWS = Input.PositionWS;
+    pixelOut.MetallicRoughness = metallicRoughness;
 
     return pixelOut;
 }

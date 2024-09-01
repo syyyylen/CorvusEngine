@@ -14,7 +14,7 @@ public:
     CorvusEditor();
     ~CorvusEditor();
 
-    std::shared_ptr<RenderItem> AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
+    std::shared_ptr<RenderItem> AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
         DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f }, DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f },
         bool transparent = false, bool instanced = false);
     void AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f }, bool randomColor = false);
@@ -60,7 +60,7 @@ private:
 
     float m_fov = 0.35f;
     float m_previousFov = m_fov;
-    float m_moveSpeed = 15.0f;
+    float m_moveSpeed = 18.0f;
     bool m_mouseLocked = true;
 
     float m_dirLightDirection[3] = { 1.0f, -1.0f, -1.0f };
@@ -74,7 +74,6 @@ private:
     bool m_enablePointLights = true;
     bool m_movePointLights = false;
     float m_movePointLightsSpeed = 0.8f;
-    PBRDebugSettings m_PBRDebugSettings;
 
     int m_viewMode;
 

@@ -19,13 +19,15 @@ SamplerState Sampler : register(s1);
 Texture2D Albedo : register(t2);
 Texture2D Normal : register(t3);
 Texture2D WorldPosition : register(t4);
-Texture2D Depth : register(t5);
+Texture2D MetallicRoughness : register(t5);
+Texture2D Depth : register(t6);
 
 float4 Main(VertexOut Input) : SV_TARGET
 {
     float4 albedo = float4(Albedo.Sample(Sampler, Input.Texcoord.xy).xyz, 1.0);
     float3 normal = normalize(Normal.Sample(Sampler, Input.Texcoord.xy).xyz);
     float3 positionWS = WorldPosition.Sample(Sampler, Input.Texcoord.xy).xyz;
+    float3 metallicRoughness = MetallicRoughness.Sample(Sampler, Input.Texcoord.xy).xyz;
     float depth = Depth.Sample(Sampler, Input.Texcoord.xy).x;
 
     float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
@@ -34,8 +36,9 @@ float4 Main(VertexOut Input) : SV_TARGET
     // basic Phong lighting for directional
     float3 ambiant = 0.1f * albedo.xyz;
     float3 view = normalize(CameraPosition - positionWS);
-
-    float3 finalLight = PBR(Fdielectric, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, Roughness, Metallic) + ambiant; // TODO compute F0
+    float3 F0 = lerp(Fdielectric, albedo.xyz, metallicRoughness.b);
+    
+    float3 finalLight = PBR(F0, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, metallicRoughness.g, metallicRoughness.b) + ambiant;
 
     switch (Mode)
     {

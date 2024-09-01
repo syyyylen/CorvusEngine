@@ -12,6 +12,8 @@ struct Material
     std::shared_ptr<Texture> Albedo;
     bool HasNormal = false;
     std::shared_ptr<Texture> Normal;
+    bool HasMetallicRoughness = false;
+    std::shared_ptr<Texture> MetallicRoughness;
 };
 
 struct Vertex

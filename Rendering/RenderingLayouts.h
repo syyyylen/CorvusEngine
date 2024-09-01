@@ -40,7 +40,7 @@ struct ObjectConstantBuffer
     int HasAlbedo = false;
     int HasNormalMap = false;
     int IsInstanced = false;
-    int Padding2;
+    int HasMetallicRoughness = false;
 };
 
 struct ScreenQuadVertex

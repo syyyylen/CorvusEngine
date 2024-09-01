@@ -6,6 +6,7 @@ struct GBuffer
     std::shared_ptr<Texture> AlbedoRenderTarget;
     std::shared_ptr<Texture> NormalRenderTarget;
     std::shared_ptr<Texture> WorldPositionRenderTarget;
+    std::shared_ptr<Texture> MetallicRoughnessRenderTarget;
     std::shared_ptr<Texture> DepthBuffer;
 };
 
@@ -17,8 +18,6 @@ public:
     void OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) override;
 
     GBuffer GetGBuffer() { return m_GBuffer; }
-
-    void SetPBRDebugSettings(PBRDebugSettings debugSettings) { m_PBRDebugSettings = debugSettings; } // TODO remove this when PBR done
 
 private:
     std::shared_ptr<GraphicsPipeline> m_deferredGeometryPipeline;
@@ -33,8 +32,4 @@ private:
     std::shared_ptr<Buffer> m_instancedLightsInstanceDataInfoBuffer;
     
     GBuffer m_GBuffer;
-
-    // TODO remove this when PBR done
-    PBRDebugSettings m_PBRDebugSettings = {};
-    std::shared_ptr<Buffer> m_PBRDebugConstantBuffer;
 };

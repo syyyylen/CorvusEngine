@@ -4,12 +4,6 @@ static const float Epsilon = 0.00001;
 // Constant normal incidence Fresnel factor for all dielectrics.
 static const float3 Fdielectric = 0.04;
 
-cbuffer PBRDebugSettings : register(b6)
-{
-    float Roughness;
-    float Metallic;
-};
-
 float DistributionGGX(float3 N, float3 H, float a)
 {
     a = a * a;
