@@ -165,21 +165,22 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
         if(renderItem->GetInstanceCount() > 1 ) // TODO remove all this nasty hard coding
         {
-            std::vector<DirectX::XMFLOAT4X4> instancesInfo;
+            std::vector<InstanceData> instancesData;
 
             auto instancesPositions = renderItem->GetInstancesPositions();
             for(auto instancePosition : instancesPositions)
             {
+                InstanceData instanceData;
                 DirectX::XMFLOAT4X4 instanceInfo = renderItem->GetTransform();
                 DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&instanceInfo);
                 mat *= DirectX::XMMatrixTranslation(instancePosition.x, instancePosition.y, instancePosition.z);
-                DirectX::XMStoreFloat4x4(&instanceInfo, mat);
-                instancesInfo.emplace_back(instanceInfo);
+                DirectX::XMStoreFloat4x4(&instanceData.WorldMat, DirectX::XMMatrixTranspose(mat));
+                instancesData.emplace_back(instanceData);
             }
 
-            void* data2;
-            renderItem->m_instancesDataBuffer->Map(0, 0, &data2);
-            memcpy(data2, &instancesInfo, sizeof(DirectX::XMFLOAT4X4) * instancesInfo.size());
+            void* dt;
+            renderItem->m_instancesDataBuffer->Map(0, 0, &dt);
+            memcpy(dt, instancesData.data(), sizeof(InstanceData) * renderItem->GetInstanceCount());
             renderItem->m_instancesDataBuffer->Unmap(0, 0);
 
             commandList->SetGraphicsShaderResource(renderItem->m_instancesDataBuffer, 5);

@@ -55,3 +55,8 @@ struct PBRDebugSettings // TODO remove this when PBR done
     float Metallic = 0.0f;
     float Padding[2];
 }; // 16 bytes
+
+struct InstanceData
+{
+    DirectX::XMFLOAT4X4 WorldMat;
+};
