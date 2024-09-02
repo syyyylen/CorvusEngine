@@ -46,8 +46,8 @@ public:
     std::vector<Primitive>& GetPrimitives() { return m_primitives; }
     Material& GetMaterial() { return m_material; }
     DirectX::XMFLOAT4X4& GetTransform() { return m_transform; } // Object World Transform
-    int GetInstanceCount() const { return m_instanceCount; }
-    std::vector<DirectX::XMFLOAT3>& GetInstancesPositions() { return m_instancesPosition; }
+    int GetInstanceCount() const { return m_instanceCount; } // TODO handle this differently pls
+    std::vector<DirectX::XMFLOAT3>& GetInstancesPositions() { return m_instancesPosition; } // TODO remove this
 
     std::shared_ptr<Buffer> m_instancesDataBuffer = nullptr;
     std::shared_ptr<Buffer> m_objectConstantBuffer;
@@ -61,5 +61,5 @@ private:
     Material m_material;
     
     int m_instanceCount = 1;
-    std::vector<DirectX::XMFLOAT3> m_instancesPosition;
+    std::vector<DirectX::XMFLOAT3> m_instancesPosition; // TODO remove this
 };

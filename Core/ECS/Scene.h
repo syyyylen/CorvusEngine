@@ -5,6 +5,7 @@
 #include "TransformComponent.h"
 #include "MeshComponent.h"
 #include "Component.h"
+#include "PointLightComponent.h"
 
 class Scene
 {

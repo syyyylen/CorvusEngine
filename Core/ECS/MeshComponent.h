@@ -7,7 +7,7 @@ class MeshComponent : public Component
 {
 public:
     MeshComponent();
-    ~MeshComponent();
+    ~MeshComponent() override;
 
     void SetRenderItem(std::shared_ptr<RenderItem> renderItem) { m_renderItem = renderItem; }
     std::shared_ptr<RenderItem> GetRenderItem() { return m_renderItem; }

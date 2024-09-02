@@ -58,25 +58,25 @@ CorvusEditor::CorvusEditor()
 
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
+    AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
+            "Assets/SciFiHelmet_MetallicRoughness.png", { -3.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+
+    AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
+        "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+
     constexpr bool pointLightsDemo = true;
     if(pointLightsDemo)
     {
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 5;
-        constexpr int column = 5;
+        constexpr int row = 16;
+        constexpr int column = 14;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
-        auto dragonModel = AddModelToScene("Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
+        auto dragonModel = AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
             { 0.25f, 0.25f, 0.25f }, false, true);
-
-        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { -3.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-
-        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
 
         int instanceCount = 0;
         for(int i = 0; i < row; i++)
@@ -153,8 +153,26 @@ void CorvusEditor::Run()
         m_camera.UpdateViewMatrix();
         m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
 
+        // --------------------------------------------- Terrible temporary way to ECS data -> renderer -----------------------------------------------
+        
+        // TODO this is WIP while implementing basic ECS. Find a proper way to iterate over meshes
+        std::set<std::shared_ptr<RenderItem>> ri;
+        std::vector<PointLight> pointLights;
+        for(const auto go : m_scene->m_gameObjects)
+        {
+            if(const auto meshComp = go->GetComponent<MeshComponent>())
+                ri.insert(meshComp->GetRenderItem());
+
+            if(const auto pointLightComp = go->GetComponent<PointLightComponent>())
+                pointLights.emplace_back(pointLightComp->m_pointLight);
+        }
+        
+        std::vector<std::shared_ptr<RenderItem>> renderItems;
+        for(auto r : ri)
+            renderItems.emplace_back(r);
+
         // ------------------------------------------------------------- Lights Update --------------------------------------------------------------------
-        for(auto& pointLight : m_pointLights)
+        for(auto& pointLight : pointLights)
         {
             if(m_movePointLights)
             {
@@ -173,21 +191,9 @@ void CorvusEditor::Run()
         passData.DeltaTime = dt;
         passData.ElapsedTime = m_elapsedTime;
         passData.ViewMode = m_viewMode;
-        passData.PointLights = m_enablePointLights ? m_pointLights : pl;
+        passData.PointLights = m_enablePointLights ? pointLights : pl;
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
-
-        // TODO this is WIP while implementing basic ECS. Find a proper way to iterate over meshes
-        std::set<std::shared_ptr<RenderItem>> ri;
-        for(auto go : m_scene->m_gameObjects)
-        {
-            if(auto meshComp = go->GetComponent<MeshComponent>())
-                ri.insert(meshComp->GetRenderItem());
-        }
-        
-        std::vector<std::shared_ptr<RenderItem>> renderItems;
-        for(auto r : ri)
-            renderItems.emplace_back(r);
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
@@ -248,6 +254,26 @@ void CorvusEditor::Run()
             ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
             ImGui::End();
 
+            ImGui::Begin("SceneHierarchy");
+            if(ImGui::BeginListBox("Objects"))
+            {
+                for(auto go : m_scene->m_gameObjects)
+                {
+                    bool isSelected = false;
+                    if(m_selectedGo != nullptr)
+                    {
+                        if(m_selectedGo->GetName() == go->GetName())
+                            isSelected = true;
+                    }
+            
+                    if(ImGui::Selectable(go->GetName().c_str(), isSelected))
+                        m_selectedGo = go;
+                }
+
+                ImGui::EndListBox();
+            }
+            ImGui::End();
+
             auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass); // TODO remove this when PBR done
             auto GBuffer = deferredPass->GetGBuffer();
             
@@ -275,8 +301,8 @@ void CorvusEditor::Run()
     }
 }
 
-std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
-    DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
+std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
+    const std::string& mrPath, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
 {
     auto model = std::make_shared<RenderItem>();
     model->ImportMesh(m_renderer, modelPath);
@@ -332,7 +358,7 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
     memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
     model->m_objectConstantBuffer->Unmap(0, 0);
 
-    auto go = m_scene->CreateGameObject("Object", position, rotation, scale);
+    auto go = m_scene->CreateGameObject(name, position, rotation, scale);
     auto meshComp = go->AddComponent<MeshComponent>();
     meshComp->SetRenderItem(model);
     
@@ -359,7 +385,9 @@ void CorvusEditor::AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4
     pointLight.LinearAttenuation = m_testLightLinearAttenuation;
     pointLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
     
-    m_pointLights.emplace_back(pointLight);
+    auto go = m_scene->CreateGameObject("PointLight", position);
+    auto lightComp = go->AddComponent<PointLightComponent>();
+    lightComp->m_pointLight = pointLight;
 }
 
 void CorvusEditor::OnKeyDown(int key)

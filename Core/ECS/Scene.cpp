@@ -11,6 +11,7 @@ Scene::~Scene()
 
 std::shared_ptr<GameObject> Scene::CreateGameObject(std::string name, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale)
 {
+    name += "_";
     name += std::to_string(m_gameObjects.size());
     std::shared_ptr<GameObject> go = std::make_shared<GameObject>(name);
     m_gameObjects.emplace_back(go);

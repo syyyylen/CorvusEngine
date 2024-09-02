@@ -5,7 +5,7 @@ class TransformComponent : public Component
 {
 public:
     TransformComponent();
-    ~TransformComponent();
+    ~TransformComponent() override;
 
     DirectX::XMFLOAT4X4 m_transform;
 };

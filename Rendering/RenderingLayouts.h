@@ -13,7 +13,7 @@ struct PointLight
     float ConstantAttenuation = 1.0f;
     float LinearAttenuation = 0.2f;
     float QuadraticAttenuation = 0.1f;
-    float Padding3;
+    float Padding3 = 0.0f;
 };
 
 struct PointLightsConstantBuffer

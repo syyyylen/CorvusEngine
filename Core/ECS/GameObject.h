@@ -9,6 +9,8 @@ public:
     GameObject(std::string name);
     ~GameObject();
 
+    std::string GetName() { return m_name; }
+
     template<typename T>
     std::shared_ptr<T> AddComponent()
     {

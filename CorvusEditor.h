@@ -15,7 +15,7 @@ public:
     CorvusEditor();
     ~CorvusEditor();
 
-    std::shared_ptr<RenderItem> AddModelToScene(const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
+    std::shared_ptr<RenderItem> AddModelToScene(std::string name, const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
         DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f }, DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f },
         bool transparent = false, bool instanced = false);
     void AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f }, bool randomColor = false);
@@ -46,11 +46,10 @@ private:
     // std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
     // std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
 
-    std::vector<PointLight> m_pointLights;
-
     std::shared_ptr<ResourcesManager> m_resourceManager;
 
     std::shared_ptr<Scene> m_scene;
+    std::shared_ptr<GameObject> m_selectedGo;
 
     float m_startTime;
     float m_lastTime;
