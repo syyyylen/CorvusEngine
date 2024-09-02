@@ -1,6 +1,7 @@
 ﻿#include "CorvusEditor.h"
 
 #include <random>
+#include <set>
 
 #include "Logger.h"
 #include <ImGui/imgui.h>
@@ -53,6 +54,8 @@ CorvusEditor::CorvusEditor()
     // m_transparencyPass = std::make_shared<TransparencyRenderPass>();
     // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
+    m_scene = std::make_shared<Scene>("DemoScene");
+
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
     constexpr bool pointLightsDemo = true;
@@ -61,13 +64,19 @@ CorvusEditor::CorvusEditor()
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 16;
-        constexpr int column = 14;
+        constexpr int row = 5;
+        constexpr int column = 5;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
         auto dragonModel = AddModelToScene("Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
             { 0.25f, 0.25f, 0.25f }, false, true);
+
+        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
+            "Assets/SciFiHelmet_MetallicRoughness.png", { -3.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+
+        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
+            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
 
         int instanceCount = 0;
         for(int i = 0; i < row; i++)
@@ -90,14 +99,6 @@ CorvusEditor::CorvusEditor()
 
         dragonModel->SetInstanceCount(instanceCount);
         dragonModel->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * dragonModel->GetInstanceCount(), sizeof(InstanceData), BufferType::Structured, false);
-    }
-    else // PBR Materials Demo
-    {
-        m_dirLightIntensity = 3.5f;
-        AddModelToScene("Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg",
-        "Assets/DamagedHelmet_metalRoughness.jpg",{}, { 90.0f, 0.0f, 0.0f });
-        AddModelToScene("Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { 3.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
     }
 
     m_startTime = clock();
@@ -176,6 +177,18 @@ void CorvusEditor::Run()
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
 
+        // TODO this is WIP while implementing basic ECS. Find a proper way to iterate over meshes
+        std::set<std::shared_ptr<RenderItem>> ri;
+        for(auto go : m_scene->m_gameObjects)
+        {
+            if(auto meshComp = go->GetComponent<MeshComponent>())
+                ri.insert(meshComp->GetRenderItem());
+        }
+        
+        std::vector<std::shared_ptr<RenderItem>> renderItems;
+        for(auto r : ri)
+            renderItems.emplace_back(r);
+
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
         auto commandList = m_renderer->GetCurrentCommandList();
@@ -187,7 +200,7 @@ void CorvusEditor::Run()
         commandList->BindRenderTargets({ backbuffer }, nullptr);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
 
-        m_deferredPass->Pass(m_renderer, passData, m_camera, m_opaqueRenderItems);
+        m_deferredPass->Pass(m_renderer, passData, m_camera, renderItems);
         // m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
@@ -298,9 +311,7 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
         m_renderer->FlushUploader(uploader);
 
     DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetTransform());
-    mat *= DirectX::XMMatrixRotationX(DirectX::XMConvertToRadians(rotation.x));
-    mat *= DirectX::XMMatrixRotationY(DirectX::XMConvertToRadians(rotation.y));
-    mat *= DirectX::XMMatrixRotationZ(DirectX::XMConvertToRadians(rotation.z));
+    mat *= DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(rotation.x), DirectX::XMConvertToRadians(rotation.y),DirectX::XMConvertToRadians(rotation.z));
     mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
     mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
     DirectX::XMStoreFloat4x4(&model->GetTransform(), mat);
@@ -321,7 +332,10 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(const std::string& mod
     memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
     model->m_objectConstantBuffer->Unmap(0, 0);
 
-    transparent ? m_transparentRenderItems.push_back(model) : m_opaqueRenderItems.push_back(model);
+    auto go = m_scene->CreateGameObject("Object", position, rotation, scale);
+    auto meshComp = go->AddComponent<MeshComponent>();
+    meshComp->SetRenderItem(model);
+    
     return model;
 }
 

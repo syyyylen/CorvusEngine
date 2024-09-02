@@ -5,6 +5,7 @@
 #include "ResourcesManager.h"
 #include "Rendering/RenderItem.h"
 #include "Window.h"
+#include "ECS/Scene.h"
 #include "RHI/D3D12Renderer.h"
 #include "Rendering/RenderPass.h"
 
@@ -42,12 +43,14 @@ private:
     std::shared_ptr<RenderPass> m_forwardPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     
-    std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
-    std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
+    // std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
+    // std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
 
     std::vector<PointLight> m_pointLights;
 
     std::shared_ptr<ResourcesManager> m_resourceManager;
+
+    std::shared_ptr<Scene> m_scene;
 
     float m_startTime;
     float m_lastTime;
