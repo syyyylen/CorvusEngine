@@ -1,16 +1,23 @@
 # CorvusEngine
-D3D12 Deferred PBR Renderer
+D3D12 Deferred Renderer - Custom C++ Engine
 
-I've just finished D3D12 setup / mesh importation and basic phong lighting.
+| 100 Point Lights |
+|---|
+| ![](Assets/PointLights.png) |
 
-| Current State | Point Lights |
-|---|---|
-| ![](Assets/currentState.png) | ![](Assets/pointLight.png) |
+| PBR |
+|---|
+| ![](Assets/PBR.png) |
+
+Features :
+* Deferred shading
+* Transparency forward pass
+* PBR
+* Instancing
+* Directionnal / Point lights
 
 RoadMap :
 * Skybox
-* PBR
 * IBL
-* Deferred
 * CSM
 * SSAO
