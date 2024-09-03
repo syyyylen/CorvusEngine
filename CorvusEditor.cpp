@@ -221,96 +221,8 @@ void CorvusEditor::Run()
         if(m_displayUI)
         {
             commandList->BindRenderTargets({ backbuffer }, nullptr);
-
             m_renderer->BeginImGuiFrame();
-
-            if (ImGui::BeginMainMenuBar())
-            {
-                if (ImGui::BeginMenu("File"))
-                {
-                    if (ImGui::MenuItem("Exit", "Alt+F4")) {
-                        m_window->Close();
-                    }
-                    ImGui::EndMenu();
-                }
-
-                ImGui::EndMainMenuBar();
-            }
-
-            ImGui::Begin("FrameRate");
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-
-            ImGui::Begin("Debug");
-            ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
-            ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
-            static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
-            ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
-            ImGui::Separator();
-            ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
-            ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
-            ImGui::End();
-
-            ImGui::Begin("Debug Point Lights");
-            ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
-            ImGui::Checkbox("Move", &m_movePointLights);
-            ImGui::Separator();
-            ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
-            ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
-            ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
-            ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
-            ImGui::End();
-
-            ImGui::Begin("SceneHierarchy");
-            if(ImGui::BeginListBox("Objects"))
-            {
-                for(auto go : m_scene->m_gameObjects)
-                {
-                    bool isSelected = false;
-                    if(m_selectedGo != nullptr)
-                    {
-                        if(m_selectedGo->GetName() == go->GetName())
-                            isSelected = true;
-                    }
-            
-                    if(ImGui::Selectable(go->GetName().c_str(), isSelected))
-                        m_selectedGo = go;
-                }
-
-                ImGui::EndListBox();
-            }
-            ImGui::Separator();
-            if(m_selectedGo != nullptr)
-            {
-                ImGui::Text(m_selectedGo->GetName().c_str());
-                if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
-                {
-                    float pos[3] = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
-                    ImGui::InputFloat3("Position", pos);
-
-                    float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
-                    ImGui::InputFloat3("Scale", scale);
-
-                    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
-                    mat *= DirectX::XMMatrixScaling(scale[0], scale[1], scale[2]);
-                    mat *= DirectX::XMMatrixTranslation(pos[0], pos[1], pos[2]);
-                    
-                    DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMMatrixTranspose(mat));
-                }
-            }
-            ImGui::End();
-
-            auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass); // TODO remove this when PBR done
-            auto GBuffer = deferredPass->GetGBuffer();
-            
-            ImGui::Begin("Debug GBuffer");
-            ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-            ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-            ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-            ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
-            ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
-            ImGui::End();
-            
+            RenderUI((float)width, (float)height);
             m_renderer->EndImGuiFrame();
         }
         
@@ -394,6 +306,128 @@ void CorvusEditor::AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4
     auto go = m_scene->CreateGameObject("PointLight", position);
     auto lightComp = go->AddComponent<PointLightComponent>();
     lightComp->m_pointLight = pointLight;
+}
+
+void CorvusEditor::RenderUI(float width, float height)
+{
+    if(ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                m_window->Close();
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+
+    ImGui::Begin("FrameRate");
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+
+    ImGui::Begin("Debug");
+    ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
+    ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
+    static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
+    ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
+    ImGui::Separator();
+    ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
+    ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
+    ImGui::End();
+
+    ImGui::Begin("Debug Point Lights");
+    ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
+    ImGui::Checkbox("Move", &m_movePointLights);
+    ImGui::Separator();
+    ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
+    ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
+    ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
+    ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
+    ImGui::End();
+
+    ImGui::Begin("SceneHierarchy");
+    if(ImGui::BeginListBox("Objects"))
+    {
+        for(auto go : m_scene->m_gameObjects)
+        {
+            bool isSelected = false;
+            if(m_selectedGo != nullptr)
+            {
+                if(m_selectedGo->GetName() == go->GetName())
+                    isSelected = true;
+            }
+    
+            if(ImGui::Selectable(go->GetName().c_str(), isSelected))
+                m_selectedGo = go;
+        }
+
+        ImGui::EndListBox();
+    }
+    ImGui::Separator();
+    if(m_selectedGo != nullptr)
+    {
+        ImGui::Text(m_selectedGo->GetName().c_str());
+        if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
+        {
+            float pos[3] = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
+            ImGui::InputFloat3("Position", pos);
+
+            float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
+            ImGui::InputFloat3("Scale", scale);
+
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::BeginFrame();
+            ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList()); 
+            ImGuizmo::SetRect(0, 0, (float)width, (float)height);
+
+            if (ImGui::RadioButton("Translate", m_gizmoOperation == ImGuizmo::TRANSLATE))
+                m_gizmoOperation = ImGuizmo::TRANSLATE;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Rotate", m_gizmoOperation == ImGuizmo::ROTATE))
+                m_gizmoOperation = ImGuizmo::ROTATE;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Scale", m_gizmoOperation == ImGuizmo::SCALE))
+                m_gizmoOperation = ImGuizmo::SCALE;
+
+            if (m_gizmoOperation != ImGuizmo::SCALE)
+            {
+                if (ImGui::RadioButton("Local", m_gizmoMode == ImGuizmo::LOCAL))
+                    m_gizmoMode = ImGuizmo::LOCAL;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("World", m_gizmoMode == ImGuizmo::WORLD))
+                    m_gizmoMode = ImGuizmo::WORLD;
+            }
+            
+            DirectX::XMFLOAT4X4 view;
+            DirectX::XMStoreFloat4x4(&view, m_camera.GetViewMatrix());
+
+            DirectX::XMFLOAT4X4 projection;
+            DirectX::XMStoreFloat4x4(&projection, m_camera.GetProjMatrix());
+
+            auto tfMat = DirectX::XMLoadFloat4x4(&tfComp->m_transform);
+            DirectX::XMFLOAT4X4 tfCopy;
+            DirectX::XMStoreFloat4x4(&tfCopy, DirectX::XMMatrixTranspose(tfMat));
+            
+            ImGuizmo::Manipulate(view.m[0], projection.m[0], m_gizmoOperation, m_gizmoMode, tfCopy.m[0]);
+
+            if(ImGuizmo::IsUsing())
+                DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&tfCopy)));
+        }
+    }
+    ImGui::End();
+
+    auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass);
+    auto GBuffer = deferredPass->GetGBuffer();
+    
+    ImGui::Begin("Debug GBuffer");
+    ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+    ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+    ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+    ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(480, 260));
+    ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(480, 260));
+    ImGui::End();
 }
 
 void CorvusEditor::OnKeyDown(int key)

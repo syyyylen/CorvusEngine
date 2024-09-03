@@ -6,6 +6,7 @@
 #include "Rendering/RenderItem.h"
 #include "Window.h"
 #include "ECS/Scene.h"
+#include "ImGui/ImGuizmo.h"
 #include "RHI/D3D12Renderer.h"
 #include "Rendering/RenderPass.h"
 
@@ -18,6 +19,7 @@ public:
     std::shared_ptr<RenderItem> AddModelToScene(std::string name, const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath, const std::string& mrPath,
         DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f }, DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f }, bool transparent = false);
     void AddLightToScene(DirectX::XMFLOAT3 position, DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f }, bool randomColor = false);
+    void RenderUI(float width, float height);
     void Run();
 
     // InputListener interface
@@ -76,7 +78,8 @@ private:
     bool m_movePointLights = false;
     float m_movePointLightsSpeed = 0.8f;
 
+    ImGuizmo::OPERATION m_gizmoOperation = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
     int m_viewMode;
-
     bool m_displayUI = true;
 };

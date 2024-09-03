@@ -90,6 +90,7 @@ void D3D12Renderer::BeginImGuiFrame()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 }
 
 void D3D12Renderer::EndImGuiFrame()
