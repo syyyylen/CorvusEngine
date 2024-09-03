@@ -59,10 +59,10 @@ CorvusEditor::CorvusEditor()
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { -3.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
-
+            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+    
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-        "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+        "Assets/SciFiHelmet_MetallicRoughness.png", { -9.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
 
     constexpr bool pointLightsDemo = true;
     if(pointLightsDemo)
@@ -78,7 +78,6 @@ CorvusEditor::CorvusEditor()
         auto dragonModel = AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
             { 0.25f, 0.25f, 0.25f }, false, true);
 
-        int instanceCount = 0;
         for(int i = 0; i < row; i++)
         {
             for(int j = 0; j < column; j++)
@@ -88,17 +87,17 @@ CorvusEditor::CorvusEditor()
 
                 if(i % 2 == 0)
                 {
-                    DirectX::XMFLOAT3 pos = { posX, 0.0f, posZ }; 
-                    dragonModel->GetInstancesPositions().emplace_back(pos);
-                    instanceCount++;
+                    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
+                    mat *= DirectX::XMMatrixScaling(0.25f, 0.25f, 0.25f);
+                    mat *= DirectX::XMMatrixTranslation(posX, 0.0f, posZ);
+                    DirectX::XMFLOAT4X4 m;
+                    DirectX::XMStoreFloat4x4(&m, DirectX::XMMatrixTranspose(mat));
+                    dragonModel->m_transforms.emplace_back(m);
                 }
                 else
                     AddLightToScene({ posX, 1.0f, posZ }, {}, true);
             }
         }
-
-        dragonModel->SetInstanceCount(instanceCount);
-        dragonModel->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * dragonModel->GetInstanceCount(), sizeof(InstanceData), BufferType::Structured, false);
     }
 
     m_startTime = clock();
@@ -336,27 +335,15 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, cons
     if(uploader.HasCommands())
         m_renderer->FlushUploader(uploader);
 
-    DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&model->GetTransform());
+    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
     mat *= DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(rotation.x), DirectX::XMConvertToRadians(rotation.y),DirectX::XMConvertToRadians(rotation.z));
     mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
     mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-    DirectX::XMStoreFloat4x4(&model->GetTransform(), mat);
+    DirectX::XMFLOAT4X4 m;
+    DirectX::XMStoreFloat4x4(&m, DirectX::XMMatrixTranspose(mat));
+    model->m_transforms.emplace_back(m);
 
-    ObjectConstantBuffer objCbuf;
-    objCbuf.HasAlbedo = model->GetMaterial().HasAlbedo;
-    objCbuf.HasNormalMap = model->GetMaterial().HasNormal;
-    objCbuf.HasMetallicRoughness = model->GetMaterial().HasMetallicRoughness;
-    objCbuf.IsInstanced = instanced;
-    DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&model->GetTransform());
-    DirectX::XMStoreFloat4x4(&objCbuf.World, DirectX::XMMatrixTranspose(world));
-
-    model->m_objectConstantBuffer = m_renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    m_renderer->CreateConstantBuffer(model->m_objectConstantBuffer);
-
-    void* objCbufData;
-    model->m_objectConstantBuffer->Map(0, 0, &objCbufData);
-    memcpy(objCbufData, &objCbuf, sizeof(ObjectConstantBuffer));
-    model->m_objectConstantBuffer->Unmap(0, 0);
+    model->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
 
     auto go = m_scene->CreateGameObject(name, position, rotation, scale);
     auto meshComp = go->AddComponent<MeshComponent>();

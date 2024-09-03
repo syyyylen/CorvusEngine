@@ -2,8 +2,6 @@
 
 RenderItem::RenderItem()
 {
-    DirectX::XMMATRIX identityMatrix = DirectX::XMMatrixIdentity();
-    DirectX::XMStoreFloat4x4(&m_transform, identityMatrix);
 }
 
 RenderItem::~RenderItem()

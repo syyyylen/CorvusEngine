@@ -6,21 +6,15 @@ cbuffer CBuf : register(b0)
     int Mode;
 };
 
-cbuffer ObjectCbuf : register(b1)
-{
-    column_major float4x4 World;
-    bool HasAlbedo;
-    bool HasNormalMap;
-    bool IsInstanced;
-    bool HasMetallicRoughness;
-};
-
 struct InstanceData
 {
     column_major float4x4 WorldMat;
+    bool HasAlbedo;
+    bool HasNormalMap;
+    bool HasMetallicRoughness;
 };
 
-StructuredBuffer<InstanceData> InstancesData : register(t6, space1);
+StructuredBuffer<InstanceData> InstancesData : register(t5, space1);
 
 struct VertexIn
 {
@@ -37,21 +31,28 @@ struct VertexOut
     float3 PositionWS : TEXCOORD0;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD1;
-    row_major float3x3 tbn : TEXCOORD2;
+    bool HasAlbedo : TEXCOORD2;
+    bool HasNormalMap : TEXCOORD3;
+    bool HasMetallicRoughness : TEXCOORD4;
+    row_major float3x3 tbn : TEXCOORD5;
 };
 
 VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
 {
     VertexOut Output;
-    float4x4 WorldMat = IsInstanced ? InstancesData[InstanceID].WorldMat : World;
-    Output.PositionWS = mul(float4(Input.position, 1.0), WorldMat).xyz;
+    InstanceData instanceData = InstancesData[InstanceID];
+    Output.PositionWS = mul(float4(Input.position, 1.0), instanceData.WorldMat).xyz;
     Output.Position = mul(float4(Output.PositionWS, 1.0), ViewProj);
-    Output.normal = normalize(mul(Input.normal, (float3x3)WorldMat));
+    Output.normal = normalize(mul(Input.normal, (float3x3)instanceData.WorldMat));
     Output.uv = Input.texcoord;
     
-    Output.tbn[0] = normalize(mul(Input.tangent, (float3x3)WorldMat));
-    Output.tbn[1] = normalize(mul(Input.binormal, (float3x3)WorldMat));
-    Output.tbn[2] = normalize(mul(Input.normal, (float3x3)WorldMat));
+    Output.tbn[0] = normalize(mul(Input.tangent, (float3x3)instanceData.WorldMat));
+    Output.tbn[1] = normalize(mul(Input.binormal, (float3x3)instanceData.WorldMat));
+    Output.tbn[2] = normalize(mul(Input.normal, (float3x3)instanceData.WorldMat));
+
+    Output.HasAlbedo = instanceData.HasAlbedo;
+    Output.HasNormalMap = instanceData.HasNormalMap;
+    Output.HasMetallicRoughness = instanceData.HasMetallicRoughness;
 
     return Output;
 }

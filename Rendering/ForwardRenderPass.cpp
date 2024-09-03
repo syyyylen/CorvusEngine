@@ -74,8 +74,6 @@ void ForwardRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glob
     {
         auto& material = renderItem->GetMaterial();
 
-        commandList->BindConstantBuffer(renderItem->m_objectConstantBuffer, 1);
-
         if(material.HasAlbedo)
             commandList->BindGraphicsShaderResource(material.Albedo, 3);
 

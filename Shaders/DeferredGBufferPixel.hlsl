@@ -1,16 +1,7 @@
-﻿cbuffer ObjectCbuf : register(b1)
-{
-    column_major float4x4 World;
-    bool HasAlbedo;
-    bool HasNormalMap;
-    bool IsInstanced;
-    bool HasMetallicRoughness;
-};
-
-SamplerState Sampler : register(s2);
-Texture2D Albedo : register(t3);
-Texture2D Normal : register(t4);
-Texture2D MetallicRoughness : register(t5);
+﻿SamplerState Sampler : register(s1);
+Texture2D Albedo : register(t2);
+Texture2D Normal : register(t3);
+Texture2D MetallicRoughness : register(t4);
 
 struct PixelIn
 {
@@ -18,7 +9,10 @@ struct PixelIn
     float3 PositionWS : TEXCOORD0;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD1;
-    row_major float3x3 tbn : TEXCOORD2;
+    bool HasAlbedo : TEXCOORD2;
+    bool HasNormalMap : TEXCOORD3;
+    bool HasMetallicRoughness : TEXCOORD4;
+    row_major float3x3 tbn : TEXCOORD5;
 };
 
 struct PixelOut
@@ -37,10 +31,10 @@ PixelOut Main(PixelIn Input)
     float3 metallicRoughness = float3(0.0f, 0.15f, 0.0f); // G roughness, B metallic
     float3 normal = Input.normal;
 
-    if(HasAlbedo)
+    if(Input.HasAlbedo)
         albedo = Albedo.Sample(Sampler, Input.uv);
 
-    if(HasNormalMap)
+    if(Input.HasNormalMap)
     {
         float4 normalSampled = Normal.Sample(Sampler, Input.uv);
         normalSampled.xyz = (normalSampled.xyz * 2.0) - 1.0;
@@ -48,7 +42,7 @@ PixelOut Main(PixelIn Input)
         normal = normalSampled.xyz;
     }
 
-    if(HasMetallicRoughness)
+    if(Input.HasMetallicRoughness)
     {
         float3 mr = MetallicRoughness.Sample(Sampler, Input.uv).rgb;
         metallicRoughness = float3(0.0f, mr.g, mr.b); 

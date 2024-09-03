@@ -1,7 +1,9 @@
 ﻿#pragma once
 #include "Core.h"
 
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 150
+
+#define MAX_INSTANCES 300
 
 struct PointLight
 {
@@ -59,4 +61,7 @@ struct PBRDebugSettings // TODO remove this when PBR done
 struct InstanceData
 {
     DirectX::XMFLOAT4X4 WorldMat;
+    int HasAlbedo;
+    int HasNormalMap;
+    int HasMetallicRoughness;
 };

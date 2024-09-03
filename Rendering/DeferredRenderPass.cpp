@@ -148,52 +148,46 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredGeometryPipeline);
     commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
-    commandList->BindGraphicsSampler(m_textureSampler, 2);
+    commandList->BindGraphicsSampler(m_textureSampler, 1);
 
     for(const auto renderItem : renderItems)
     {
         auto& material = renderItem->GetMaterial();
 
-        commandList->BindConstantBuffer(renderItem->m_objectConstantBuffer, 1);
-
-        if(renderItem->GetInstanceCount() > 1 ) // TODO remove all this nasty hard coding
+        std::vector<InstanceData> instancesData;
+        auto instancesTransforms = renderItem->m_transforms;
+        for(auto instanceTransform : instancesTransforms)
         {
-            std::vector<InstanceData> instancesData;
-
-            auto instancesPositions = renderItem->GetInstancesPositions();
-            for(auto instancePosition : instancesPositions)
-            {
-                InstanceData instanceData;
-                DirectX::XMFLOAT4X4 instanceInfo = renderItem->GetTransform();
-                DirectX::XMMATRIX mat = DirectX::XMLoadFloat4x4(&instanceInfo);
-                mat *= DirectX::XMMatrixTranslation(instancePosition.x, instancePosition.y, instancePosition.z);
-                DirectX::XMStoreFloat4x4(&instanceData.WorldMat, DirectX::XMMatrixTranspose(mat));
-                instancesData.emplace_back(instanceData);
-            }
-
-            void* dt;
-            renderItem->m_instancesDataBuffer->Map(0, 0, &dt);
-            memcpy(dt, instancesData.data(), sizeof(InstanceData) * renderItem->GetInstanceCount());
-            renderItem->m_instancesDataBuffer->Unmap(0, 0);
-
-            commandList->SetGraphicsShaderResource(renderItem->m_instancesDataBuffer, 6);
+            InstanceData instanceData;
+            instanceData.WorldMat = instanceTransform;
+            instanceData.HasAlbedo = material.HasAlbedo;
+            instanceData.HasNormalMap = material.HasNormal;
+            instanceData.HasMetallicRoughness = material.HasMetallicRoughness;
+            instancesData.emplace_back(instanceData);
         }
 
+        void* dt;
+        renderItem->m_instancesDataBuffer->Map(0, 0, &dt);
+        memcpy(dt, instancesData.data(), sizeof(InstanceData) * renderItem->m_transforms.size());
+        renderItem->m_instancesDataBuffer->Unmap(0, 0);
+
+        commandList->SetGraphicsShaderResource(renderItem->m_instancesDataBuffer, 5);
+
         if(material.HasAlbedo)
-            commandList->BindGraphicsShaderResource(material.Albedo, 3);
+            commandList->BindGraphicsShaderResource(material.Albedo, 2);
 
         if(material.HasNormal)
-            commandList->BindGraphicsShaderResource(material.Normal, 4);
+            commandList->BindGraphicsShaderResource(material.Normal, 3);
 
         if(material.HasMetallicRoughness)
-            commandList->BindGraphicsShaderResource(material.MetallicRoughness, 5);
+            commandList->BindGraphicsShaderResource(material.MetallicRoughness, 4);
             
         const auto primitives = renderItem->GetPrimitives();
         for(const auto& primitive : primitives)
         {
             commandList->BindVertexBuffer(primitive.m_vertexBuffer);
             commandList->BindIndexBuffer(primitive.m_indicesBuffer);
-            commandList->DrawIndexed(primitive.m_indexCount, renderItem->GetInstanceCount());
+            commandList->DrawIndexed(primitive.m_indexCount, renderItem->m_transforms.size());
         }
     }
 
