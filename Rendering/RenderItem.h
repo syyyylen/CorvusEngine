@@ -42,6 +42,7 @@ public:
     
     void ImportMesh(std::shared_ptr<D3D12Renderer> renderer, std::string filePath);
 
+    std::string GetPath() { return m_path; }
     std::vector<Primitive>& GetPrimitives() { return m_primitives; }
     Material& GetMaterial() { return m_material; }
     std::vector<DirectX::XMFLOAT4X4> m_transforms;
@@ -52,6 +53,7 @@ private:
     void ProcessPrimitive(std::shared_ptr<D3D12Renderer> renderer, aiMesh *mesh, const aiScene *scene);
     void ProcessNode(std::shared_ptr<D3D12Renderer> renderer, aiNode *node, const aiScene *scene);
 
+    std::string m_path;
     std::vector<Primitive> m_primitives;
     Material m_material;
     

@@ -36,3 +36,28 @@ std::shared_ptr<Texture> ResourcesManager::LoadTexture(const std::string& texPat
 
     return nullptr;
 }
+
+std::shared_ptr<RenderItem> ResourcesManager::LoadMesh(const std::string& meshPath)
+{
+    if(meshPath.empty())
+        return nullptr;
+
+    if(auto renderer = m_renderer.lock())
+    {
+        auto weakMesh = m_renderItems.find(meshPath);
+        if(weakMesh != m_renderItems.end())
+        {
+            if(auto mesh = weakMesh->second.lock())
+                return mesh;
+        }
+
+        auto model = std::make_shared<RenderItem>();
+        model->ImportMesh(renderer, meshPath);
+
+        m_renderItems.emplace(meshPath, model);
+        
+        return model;
+    }
+
+    return nullptr;
+}

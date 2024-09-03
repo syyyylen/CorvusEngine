@@ -4,12 +4,12 @@
 #include <set>
 
 #include "Logger.h"
+#include "ImGui/ImGuizmo.h"
 #include <ImGui/imgui.h>
 
 #include "Image.h"
 #include "InputSystem.h"
 #include "Rendering/DeferredRenderPass.h"
-#include "Rendering/ForwardRenderPass.h"
 #include "Rendering/ShaderCompiler.h"
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
@@ -59,10 +59,10 @@ CorvusEditor::CorvusEditor()
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
 
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
     
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-        "Assets/SciFiHelmet_MetallicRoughness.png", { -9.0f, 0.0f, 0.0f }, { 0.0f, 180.0f, 0.0f });
+        "Assets/SciFiHelmet_MetallicRoughness.png", { -9.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 
     constexpr bool pointLightsDemo = true;
     if(pointLightsDemo)
@@ -75,9 +75,6 @@ CorvusEditor::CorvusEditor()
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
-        auto dragonModel = AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { 0.0f, 0.0f, 0.0f }, {},
-            { 0.25f, 0.25f, 0.25f }, false, true);
-
         for(int i = 0; i < row; i++)
         {
             for(int j = 0; j < column; j++)
@@ -87,12 +84,7 @@ CorvusEditor::CorvusEditor()
 
                 if(i % 2 == 0)
                 {
-                    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
-                    mat *= DirectX::XMMatrixScaling(0.25f, 0.25f, 0.25f);
-                    mat *= DirectX::XMMatrixTranslation(posX, 0.0f, posZ);
-                    DirectX::XMFLOAT4X4 m;
-                    DirectX::XMStoreFloat4x4(&m, DirectX::XMMatrixTranspose(mat));
-                    dragonModel->m_transforms.emplace_back(m);
+                    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { posX, 0.0f, posZ }, {}, { 0.25f, 0.25f, 0.25f });
                 }
                 else
                     AddLightToScene({ posX, 1.0f, posZ }, {}, true);
@@ -155,15 +147,31 @@ void CorvusEditor::Run()
         // --------------------------------------------- Terrible temporary way to ECS data -> renderer -----------------------------------------------
         
         // TODO this is WIP while implementing basic ECS. Find a proper way to iterate over meshes
+        for(const auto go : m_scene->m_gameObjects)
+        {
+            if(const auto meshComp = go->GetComponent<MeshComponent>())
+                meshComp->GetRenderItem()->m_transforms.clear();
+        }
+        
         std::set<std::shared_ptr<RenderItem>> ri;
         std::vector<PointLight> pointLights;
         for(const auto go : m_scene->m_gameObjects)
         {
-            if(const auto meshComp = go->GetComponent<MeshComponent>())
-                ri.insert(meshComp->GetRenderItem());
+            if(const auto tfComp = go->GetComponent<TransformComponent>())
+            {
+                if(const auto meshComp = go->GetComponent<MeshComponent>())
+                {
+                    auto renderItem = meshComp->GetRenderItem();
+                    renderItem->m_transforms.emplace_back(tfComp->m_transform);
+                    ri.insert(renderItem);
+                }
 
-            if(const auto pointLightComp = go->GetComponent<PointLightComponent>())
-                pointLights.emplace_back(pointLightComp->m_pointLight);
+                if(const auto pointLightComp = go->GetComponent<PointLightComponent>())
+                {
+                    pointLightComp->m_pointLight.Position = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
+                    pointLights.emplace_back(pointLightComp->m_pointLight);
+                }
+            }
         }
         
         std::vector<std::shared_ptr<RenderItem>> renderItems;
@@ -271,6 +279,25 @@ void CorvusEditor::Run()
 
                 ImGui::EndListBox();
             }
+            ImGui::Separator();
+            if(m_selectedGo != nullptr)
+            {
+                ImGui::Text(m_selectedGo->GetName().c_str());
+                if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
+                {
+                    float pos[3] = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
+                    ImGui::InputFloat3("Position", pos);
+
+                    float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
+                    ImGui::InputFloat3("Scale", scale);
+
+                    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
+                    mat *= DirectX::XMMatrixScaling(scale[0], scale[1], scale[2]);
+                    mat *= DirectX::XMMatrixTranslation(pos[0], pos[1], pos[2]);
+                    
+                    DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMMatrixTranspose(mat));
+                }
+            }
             ImGui::End();
 
             auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass); // TODO remove this when PBR done
@@ -301,10 +328,9 @@ void CorvusEditor::Run()
 }
 
 std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, const std::string& modelPath, const std::string& albedoPath, const std::string& normalPath,
-    const std::string& mrPath, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent, bool instanced)
+    const std::string& mrPath, DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT3 scale, bool transparent)
 {
-    auto model = std::make_shared<RenderItem>();
-    model->ImportMesh(m_renderer, modelPath);
+    auto model = m_resourceManager->LoadMesh(modelPath);
 
     Uploader uploader = m_renderer->CreateUploader();
     Image albedoImg;
@@ -335,15 +361,8 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, cons
     if(uploader.HasCommands())
         m_renderer->FlushUploader(uploader);
 
-    DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
-    mat *= DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(rotation.x), DirectX::XMConvertToRadians(rotation.y),DirectX::XMConvertToRadians(rotation.z));
-    mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
-    mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-    DirectX::XMFLOAT4X4 m;
-    DirectX::XMStoreFloat4x4(&m, DirectX::XMMatrixTranspose(mat));
-    model->m_transforms.emplace_back(m);
-
-    model->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
+    if(model->m_instancesDataBuffer == nullptr)
+        model->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
 
     auto go = m_scene->CreateGameObject(name, position, rotation, scale);
     auto meshComp = go->AddComponent<MeshComponent>();

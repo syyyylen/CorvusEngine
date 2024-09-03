@@ -2,6 +2,7 @@
 #include <ImGui/imgui_impl_dx12.h>
 #include <ImGui/imgui_impl_win32.h>
 #include <ImGui/imgui.h>
+#include <ImGui/ImGuizmo.h>
 
 D3D12Renderer::D3D12Renderer(HWND hwnd) : m_frameIndex(0)
 {
