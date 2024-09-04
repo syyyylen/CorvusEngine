@@ -224,7 +224,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------
 
-    if(globalPassData.PointLights.empty())
+    if(globalPassData.PointLights.empty() || globalPassData.ViewMode > 0)
         return;
 
     commandList->SetTopology(Topology::TriangleList);

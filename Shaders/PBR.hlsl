@@ -64,18 +64,3 @@ float3 PBR(float3 F0, float3 N, float3 V, float3 L, float3 H, float3 radiance, f
     
     return outgoingLight;
 }
-
-float3 DoDiffuse(float4 lightColor, float3 lightVector, float3 normal)
-{
-    return max(0.0f, dot(lightVector, normal)) * lightColor.xyz;
-}
-
-float3 DoSpecular(float4 lightColor, float3 lightVector, float3 normal, float3 view)
-{
-    float3 reflectedLight = normalize(reflect(-lightVector, normal));
-    float amountSpecularLight = 0;
-    if(dot(lightVector, normal) > 0)
-        amountSpecularLight = pow(max(0.0f, dot(reflectedLight, view)), 10.0f /* Shininess */);
-
-    return amountSpecularLight * lightColor.xyz;
-}
