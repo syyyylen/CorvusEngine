@@ -168,7 +168,7 @@ void CorvusEditor::Run()
 
                 if(const auto pointLightComp = go->GetComponent<PointLightComponent>())
                 {
-                    pointLightComp->m_pointLight.Position = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
+                    pointLightComp->m_pointLight.Position = { tfComp->m_transform.m[3][0], tfComp->m_transform.m[3][1], tfComp->m_transform.m[3][2] };
                     pointLights.emplace_back(pointLightComp->m_pointLight);
                 }
             }
@@ -371,7 +371,7 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Text(m_selectedGo->GetName().c_str());
         if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
         {
-            float pos[3] = { tfComp->m_transform.m[0][3], tfComp->m_transform.m[1][3], tfComp->m_transform.m[2][3] };
+            float pos[3] = { tfComp->m_transform.m[3][0], tfComp->m_transform.m[3][1], tfComp->m_transform.m[3][2] };
             ImGui::InputFloat3("Position", pos);
 
             float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
@@ -408,12 +408,12 @@ void CorvusEditor::RenderUI(float width, float height)
 
             auto tfMat = DirectX::XMLoadFloat4x4(&tfComp->m_transform);
             DirectX::XMFLOAT4X4 tfCopy;
-            DirectX::XMStoreFloat4x4(&tfCopy, DirectX::XMMatrixTranspose(tfMat));
+            DirectX::XMStoreFloat4x4(&tfCopy, tfMat);
             
             ImGuizmo::Manipulate(view.m[0], projection.m[0], m_gizmoOperation, m_gizmoMode, tfCopy.m[0]);
 
             if(ImGuizmo::IsUsing())
-                DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&tfCopy)));
+                DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMLoadFloat4x4(&tfCopy));
         }
     }
     ImGui::End();

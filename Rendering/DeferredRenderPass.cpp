@@ -244,7 +244,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity();
         mat *= DirectX::XMMatrixScaling(radius, radius, radius);
         mat *= DirectX::XMMatrixTranslation(globalPassData.PointLights[i].Position.x, globalPassData.PointLights[i].Position.y, globalPassData.PointLights[i].Position.z);
-        DirectX::XMStoreFloat4x4(&instanceData.WorldMat, DirectX::XMMatrixTranspose(mat));
+        DirectX::XMStoreFloat4x4(&instanceData.WorldMat, mat);
         instancesData.emplace_back(instanceData);
     }
 

@@ -8,7 +8,7 @@
 
 struct InstanceData
 {
-    column_major float4x4 WorldMat;
+    row_major float4x4 WorldMat;
     bool HasAlbedo;
     bool HasNormalMap;
     bool HasMetallicRoughness;

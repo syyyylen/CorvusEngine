@@ -37,7 +37,7 @@ struct PixelIn
     bool HasNormalMap : TEXCOORD4;
     float3 CameraPosition : TEXCOORD5;
     int Mode : TEXCOORD6;
-    row_major float3x3 tbn : TEXCOORD7;
+    float3x3 tbn : TEXCOORD7;
 };
 
 float3 DoDiffuse(float4 lightColor, float3 lightVector, float3 normal)

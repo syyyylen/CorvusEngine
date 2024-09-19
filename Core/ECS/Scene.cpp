@@ -21,7 +21,7 @@ std::shared_ptr<GameObject> Scene::CreateGameObject(std::string name, DirectX::X
     mat *= DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(rotation.x), DirectX::XMConvertToRadians(rotation.y),DirectX::XMConvertToRadians(rotation.z));
     mat *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
     mat *= DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-    DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMMatrixTranspose(mat));
+    DirectX::XMStoreFloat4x4(&tfComp->m_transform, mat);
     
     return go;
 }
