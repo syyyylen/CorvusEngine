@@ -7,7 +7,7 @@ struct VertexOut {
 
 cbuffer CBuf : register(b0)
 {
-    float4x4 InvViewProj;
+    row_major float4x4 InvViewProj;
     float Time;
     float3 CameraPosition;
     int Mode;
@@ -30,12 +30,17 @@ float4 Main(VertexOut Input) : SV_TARGET
     float3 metallicRoughness = MetallicRoughness.Sample(Sampler, Input.Texcoord.xy).xyz;
     float depth = Depth.Sample(Sampler, Input.Texcoord.xy).x;
 
+    // TODO fix world pos from depth and remove world pos tex from gbuffer
+    // float4 projectedPos = float4(Input.Position.xy, depth, 1.0f);
+    // float4 positionWS = mul(projectedPos, InvViewProj);
+    // positionWS = positionWS / positionWS.w;
+
     float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
     float3 dirLightVec = normalize(DirLightDirection) * -1.0f; // l (norm vec pointing toward light direction)
 
     // basic Phong lighting for directional
     float3 ambiant = 0.1f * albedo.xyz;
-    float3 view = normalize(CameraPosition - positionWS);
+    float3 view = normalize(CameraPosition - positionWS.xyz);
     float3 F0 = lerp(Fdielectric, albedo.xyz, metallicRoughness.b);
     
     float3 finalLight = PBR(F0, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, metallicRoughness.g, metallicRoughness.b) + ambiant;
@@ -51,7 +56,7 @@ float4 Main(VertexOut Input) : SV_TARGET
     case 3:
         return float4(depth, 0.0, 0.0, 1.0);
     case 4:
-        return float4(positionWS, 1.0);
+        return float4(positionWS.xyz, 1.0f);
     case 5:
         return float4(metallicRoughness, 1.0);
     default:

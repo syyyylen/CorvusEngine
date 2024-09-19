@@ -1,6 +1,6 @@
 ﻿cbuffer CBuf : register(b0)
 {
-    float4x4 ViewProj;
+    row_major float4x4 ViewProj;
     float Time;
     float3 CameraPosition;
     int Mode;

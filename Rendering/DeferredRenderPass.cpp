@@ -118,7 +118,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     cbuf.Mode = globalPassData.ViewMode;
     cbuf.DirLightDirection = globalPassData.DirectionalInfo.Direction;
     cbuf.DirLightIntensity = globalPassData.DirectionalInfo.Intensity;
-    DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(viewProj));
+    DirectX::XMStoreFloat4x4(&cbuf.ViewProj, viewProj);
         
     void* data;
     m_sceneConstantBuffer->Map(0, 0, &data);
@@ -200,7 +200,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->ImageBarrier(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
 
     auto invViewProj = camera.GetInvViewProjMatrix();
-    DirectX::XMStoreFloat4x4(&cbuf.ViewProj, DirectX::XMMatrixTranspose(invViewProj));
+    DirectX::XMStoreFloat4x4(&cbuf.ViewProj, invViewProj);
         
     void* data2;
     m_lightingConstantBuffer->Map(0, 0, &data2);
