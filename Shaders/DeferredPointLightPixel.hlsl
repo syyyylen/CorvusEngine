@@ -47,7 +47,7 @@ float4 Main(PixelIn Input) : SV_TARGET
     float3 l = Input.ObjectPosition - positionWS;
     float d = length(l);
     if(d > lightInfo.Radius)
-        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+        discard;
 
     float3 lightVector = normalize(l);
     float attenuation = DoAttenuation(lightInfo, d);
