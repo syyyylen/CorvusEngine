@@ -67,6 +67,30 @@ void CommandList::ImageBarrier(std::shared_ptr<Texture> texture, D3D12_RESOURCE_
     texture->SetState(state);
 }
 
+void CommandList::ImageBarrier(std::unordered_map<std::shared_ptr<Texture>, D3D12_RESOURCE_STATES> texturesStates)
+{
+    std::vector<D3D12_RESOURCE_BARRIER> barriers;
+    for(const auto pair : texturesStates)
+    {
+        auto texture = pair.first;
+        auto state = pair.second;
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = texture->GetResource().Resource;
+        barrier.Transition.StateBefore = texture->GetState();
+        barrier.Transition.StateAfter = state;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+        if (barrier.Transition.StateBefore == barrier.Transition.StateAfter)
+            return;
+
+        texture->SetState(state);
+        barriers.emplace_back(barrier);
+    }
+
+    m_commandList->ResourceBarrier(barriers.size(), barriers.data());
+}
+
 void CommandList::BindRenderTargets(const std::vector<std::shared_ptr<Texture>>& renderTargets, std::shared_ptr<Texture> depthTarget)
 {
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvDescriptors;
