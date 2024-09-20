@@ -33,6 +33,8 @@ public:
     // end InputListener interface
 
 private:
+    void UpdateProjMatrix(float width, float height);
+    
     std::shared_ptr<Window> m_window;
     std::shared_ptr<D3D12Renderer> m_renderer;
     std::shared_ptr<GraphicsPipeline> m_trianglePipeline;
@@ -82,4 +84,6 @@ private:
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
     int m_viewMode;
     bool m_displayUI = true;
+
+    ImVec2 m_viewportCachedSize;
 };

@@ -16,6 +16,7 @@ public:
     void Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) override;
     void Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems) override;
     void OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) override;
+    std::shared_ptr<Texture> GetRenderTexture() override { return m_renderTexture; }
 
     GBuffer GetGBuffer() { return m_GBuffer; }
 
@@ -30,6 +31,7 @@ private:
     std::shared_ptr<RenderItem> m_pointLightMesh;
     std::shared_ptr<Buffer> m_instancedLightsInstanceDataTransformBuffer;
     std::shared_ptr<Buffer> m_instancedLightsInstanceDataInfoBuffer;
+    std::shared_ptr<Texture> m_renderTexture;
     
     GBuffer m_GBuffer;
 };

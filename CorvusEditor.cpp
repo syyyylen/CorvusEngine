@@ -25,23 +25,14 @@ CorvusEditor::CorvusEditor()
     InputSystem::Get()->AddListener(this);
     InputSystem::Get()->ShowCursor(false);
 
-    auto updateProjMatrix = [this](float width, float height)
-    {
-        float aspectRatio = width / height;
-        m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, aspectRatio);
-    };
-
     int defaultWidth = 1380;
     int defaultHeight = 960;
 
     m_window = std::make_shared<Window>(defaultWidth, defaultHeight, L"Corvus Editor");
-    m_window->DefineOnResize([this, updateProjMatrix](int width, int height)
+    m_window->DefineOnResize([this](int width, int height)
     {
         LOG(Debug, "Window resize !");
         m_renderer->Resize(width, height);
-        m_deferredPass->OnResize(m_renderer, width, height);
-        // m_transparencyPass->OnResize(m_renderer, width, height);
-        updateProjMatrix((float)width, (float)height);
     });
 
     m_renderer = std::make_shared<D3D12Renderer>(m_window->GetHandle());
@@ -50,9 +41,6 @@ CorvusEditor::CorvusEditor()
 
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
-
-    // m_transparencyPass = std::make_shared<TransparencyRenderPass>();
-    // m_transparencyPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     m_scene = std::make_shared<Scene>("DemoScene");
 
@@ -70,8 +58,8 @@ CorvusEditor::CorvusEditor()
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 12;
-        constexpr int column = 12;
+        constexpr int row = 5;
+        constexpr int column = 5;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
@@ -98,7 +86,6 @@ CorvusEditor::CorvusEditor()
 
     uint32_t width, height;
     m_window->GetSize(width, height);
-    updateProjMatrix((float)width, (float)height);
     
     InputSystem::Get()->SetCursorPosition(Vec2((float)width/2.0f, (float)height/2.0f));
 
@@ -134,7 +121,7 @@ void CorvusEditor::Run()
 
         if(m_fov != m_previousFov)
         {
-            m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, (float)width / (float)height);
+            m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, m_viewportCachedSize.x / m_viewportCachedSize.y);
             m_previousFov = m_fov;
         }
 
@@ -142,7 +129,7 @@ void CorvusEditor::Run()
         m_camera.Strafe(m_cameraRight * (m_moveSpeed * dt));
 
         m_camera.UpdateViewMatrix();
-        m_camera.UpdateInvViewProjMatrix((float)width, (float)height);
+        m_camera.UpdateInvViewProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);
 
         // --------------------------------------------- Terrible temporary way to ECS data -> renderer -----------------------------------------------
         
@@ -201,6 +188,8 @@ void CorvusEditor::Run()
         passData.PointLights = m_enablePointLights ? pointLights : pl;
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
+        passData.viewportSizeX = m_viewportCachedSize.x;
+        passData.viewportSizeY = m_viewportCachedSize.y;
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
@@ -323,110 +312,177 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::EndMainMenuBar();
     }
 
-    ImGui::Begin("FrameRate");
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::End();
-
-    ImGui::Begin("Debug");
-    ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
-    ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
-    static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
-    ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
-    ImGui::Separator();
-    ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
-    ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
-    ImGui::End();
-
-    ImGui::Begin("Debug Point Lights");
-    ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
-    ImGui::Checkbox("Move", &m_movePointLights);
-    ImGui::Separator();
-    ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
-    ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
-    ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
-    ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
-    ImGui::End();
-
-    ImGui::Begin("SceneHierarchy");
-    if(ImGui::BeginListBox("Objects"))
+    static bool dockspaceOpen = true;
+    static bool opt_fullscreen = true;
+    static bool opt_padding = false;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+        
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    if (opt_fullscreen)
     {
-        for(auto go : m_scene->m_gameObjects)
-        {
-            bool isSelected = false;
-            if(m_selectedGo != nullptr)
-            {
-                if(m_selectedGo->GetName() == go->GetName())
-                    isSelected = true;
-            }
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    }
+    else
+    {
+        dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+    }
+        
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        window_flags |= ImGuiWindowFlags_NoBackground;
+        
+    if (!opt_padding)
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        
+    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
     
-            if(ImGui::Selectable(go->GetName().c_str(), isSelected))
-                m_selectedGo = go;
+    { // Dockspace scope
+        if (!opt_padding)
+        ImGui::PopStyleVar();
+        
+        if (opt_fullscreen)
+            ImGui::PopStyleVar(2);
+            
+        // Submit the DockSpace
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
 
-        ImGui::EndListBox();
-    }
-    ImGui::Separator();
-    if(m_selectedGo != nullptr)
-    {
-        ImGui::Text(m_selectedGo->GetName().c_str());
-        if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
+        ImGui::Begin("FrameRate");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::End();
+
+        ImGui::Begin("Debug");
+        ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
+        ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
+        ImGui::Separator();
+        ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
+        ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
+        ImGui::End();
+
+        ImGui::Begin("Debug Point Lights");
+        ImGui::Checkbox("Enable Point Lights", &m_enablePointLights);
+        ImGui::Checkbox("Move", &m_movePointLights);
+        ImGui::Separator();
+        ImGui::SliderFloat("MoveSpeed", &m_movePointLightsSpeed, 0.0f, 8.0f);
+        ImGui::SliderFloat("Constant", &m_testLightConstAttenuation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Linear", &m_testLightLinearAttenuation, 0.0f, 0.5f);
+        ImGui::SliderFloat("Quadratic", &m_testLightQuadraticAttenuation, 0.0f, 0.5f);
+        ImGui::End();
+
+        ImGui::Begin("SceneHierarchy");
+        if(ImGui::BeginListBox("Objects"))
         {
-            float pos[3] = { tfComp->m_transform.m[3][0], tfComp->m_transform.m[3][1], tfComp->m_transform.m[3][2] };
-            ImGui::InputFloat3("Position", pos);
-
-            float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
-            ImGui::InputFloat3("Scale", scale);
-
-            ImGuizmo::SetOrthographic(false);
-            ImGuizmo::BeginFrame();
-            ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList()); 
-            ImGuizmo::SetRect(0, 0, (float)width, (float)height);
-
-            if (ImGui::RadioButton("Translate", m_gizmoOperation == ImGuizmo::TRANSLATE))
-                m_gizmoOperation = ImGuizmo::TRANSLATE;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Rotate", m_gizmoOperation == ImGuizmo::ROTATE))
-                m_gizmoOperation = ImGuizmo::ROTATE;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Scale", m_gizmoOperation == ImGuizmo::SCALE))
-                m_gizmoOperation = ImGuizmo::SCALE;
-
-            if (m_gizmoOperation != ImGuizmo::SCALE)
+            for(auto go : m_scene->m_gameObjects)
             {
-                if (ImGui::RadioButton("Local", m_gizmoMode == ImGuizmo::LOCAL))
-                    m_gizmoMode = ImGuizmo::LOCAL;
+                bool isSelected = false;
+                if(m_selectedGo != nullptr)
+                {
+                    if(m_selectedGo->GetName() == go->GetName())
+                        isSelected = true;
+                }
+        
+                if(ImGui::Selectable(go->GetName().c_str(), isSelected))
+                    m_selectedGo = go;
+            }
+
+            ImGui::EndListBox();
+        }
+        ImGui::Separator();
+        if(m_selectedGo != nullptr)
+        {
+            ImGui::Text(m_selectedGo->GetName().c_str());
+            if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
+            {
+                float pos[3] = { tfComp->m_transform.m[3][0], tfComp->m_transform.m[3][1], tfComp->m_transform.m[3][2] };
+                ImGui::InputFloat3("Position", pos);
+
+                float scale[3] = { tfComp->m_transform.m[0][0], tfComp->m_transform.m[1][1], tfComp->m_transform.m[2][2] };
+                ImGui::InputFloat3("Scale", scale);
+
+                if (ImGui::RadioButton("Translate", m_gizmoOperation == ImGuizmo::TRANSLATE))
+                    m_gizmoOperation = ImGuizmo::TRANSLATE;
                 ImGui::SameLine();
-                if (ImGui::RadioButton("World", m_gizmoMode == ImGuizmo::WORLD))
-                    m_gizmoMode = ImGuizmo::WORLD;
+                if (ImGui::RadioButton("Rotate", m_gizmoOperation == ImGuizmo::ROTATE))
+                    m_gizmoOperation = ImGuizmo::ROTATE;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Scale", m_gizmoOperation == ImGuizmo::SCALE))
+                    m_gizmoOperation = ImGuizmo::SCALE;
+
+                if (m_gizmoOperation != ImGuizmo::SCALE)
+                {
+                    if (ImGui::RadioButton("Local", m_gizmoMode == ImGuizmo::LOCAL))
+                        m_gizmoMode = ImGuizmo::LOCAL;
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("World", m_gizmoMode == ImGuizmo::WORLD))
+                        m_gizmoMode = ImGuizmo::WORLD;
+                }
             }
-            
-            DirectX::XMFLOAT4X4 view;
-            DirectX::XMStoreFloat4x4(&view, m_camera.GetViewMatrix());
-
-            DirectX::XMFLOAT4X4 projection;
-            DirectX::XMStoreFloat4x4(&projection, m_camera.GetProjMatrix());
-
-            auto tfMat = DirectX::XMLoadFloat4x4(&tfComp->m_transform);
-            DirectX::XMFLOAT4X4 tfCopy;
-            DirectX::XMStoreFloat4x4(&tfCopy, tfMat);
-            
-            ImGuizmo::Manipulate(view.m[0], projection.m[0], m_gizmoOperation, m_gizmoMode, tfCopy.m[0]);
-
-            if(ImGuizmo::IsUsing())
-                DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMLoadFloat4x4(&tfCopy));
         }
-    }
-    ImGui::End();
+        ImGui::End();
 
-    auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass);
-    auto GBuffer = deferredPass->GetGBuffer();
+        auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass);
+        auto GBuffer = deferredPass->GetGBuffer();
+        
+        ImGui::Begin("Debug GBuffer");
+        ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::End();
+
+        ImGui::Begin("Viewport");
+        
+        auto viewportSize = ImGui::GetContentRegionAvail();
+        if(m_viewportCachedSize.x != viewportSize.x || m_viewportCachedSize.y != viewportSize.y)
+        {
+            m_viewportCachedSize = viewportSize;
+            m_deferredPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
+            UpdateProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);
+        }
+
+        ImGui::Image((ImTextureID)deferredPass->GetRenderTexture()->m_srvUav.GPU.ptr, ImVec2(m_viewportCachedSize.x , m_viewportCachedSize.y));
+
+        if(m_selectedGo != nullptr)
+        {
+            if(auto tfComp = m_selectedGo->GetComponent<TransformComponent>())
+            {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist(); 
+                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+                
+                DirectX::XMFLOAT4X4 view;
+                DirectX::XMStoreFloat4x4(&view, m_camera.GetViewMatrix());
+
+                DirectX::XMFLOAT4X4 projection;
+                DirectX::XMStoreFloat4x4(&projection, m_camera.GetProjMatrix());
+
+                auto tfMat = DirectX::XMLoadFloat4x4(&tfComp->m_transform);
+                DirectX::XMFLOAT4X4 tfCopy;
+                DirectX::XMStoreFloat4x4(&tfCopy, tfMat);
+                
+                ImGuizmo::Manipulate(view.m[0], projection.m[0], m_gizmoOperation, m_gizmoMode, tfCopy.m[0]);
+
+                if(ImGuizmo::IsUsing())
+                    DirectX::XMStoreFloat4x4(&tfComp->m_transform, DirectX::XMLoadFloat4x4(&tfCopy));
+            }
+        }
+        
+        ImGui::End();
+    } // End dockspace scope
     
-    ImGui::Begin("Debug GBuffer");
-    ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-    ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-    ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-    ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-    ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(440, 220));
     ImGui::End();
 }
 
@@ -490,4 +546,10 @@ void CorvusEditor::OnLeftMouseUp(const InputListener::Vec2& mousePos)
 
 void CorvusEditor::OnRightMouseUp(const InputListener::Vec2& mousePos)
 {
+}
+
+void CorvusEditor::UpdateProjMatrix(float width, float height)
+{
+    float aspectRatio = width / height;
+    m_camera.UpdatePerspectiveFOV(m_fov * 3.14159f, aspectRatio);
 }
