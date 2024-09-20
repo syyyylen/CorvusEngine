@@ -436,11 +436,11 @@ void CorvusEditor::RenderUI(float width, float height)
         auto GBuffer = deferredPass->GetGBuffer();
         
         ImGui::Begin("Debug GBuffer");
-        ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-        ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-        ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(440, 220));
-        ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(440, 220));
+        ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
+        ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
+        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
+        ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
+        ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::End();
 
         ImGui::Begin("Viewport");
