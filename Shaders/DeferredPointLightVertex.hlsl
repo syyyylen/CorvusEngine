@@ -4,6 +4,10 @@
     float Time;
     float3 CameraPosition;
     int Mode;
+    float3 DirLightDirection;
+    float DirLightIntensity;
+    float3 Padding;
+    row_major float4x4 InvViewProj;
 };
 
 struct InstanceData
@@ -30,8 +34,7 @@ struct VertexOut
     float4 Position : SV_POSITION;
     float3 CameraPosition : TEXCOORD0;
     float3 ObjectPosition : TEXCOORD1;
-    int Mode : TEXCOORD2;
-    int InstanceIdx : TEXCOORD3;
+    int InstanceIdx : TEXCOORD2;
 };
 
 VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
@@ -41,7 +44,6 @@ VertexOut Main(VertexIn Input, uint InstanceID : SV_InstanceID)
     Output.Position = mul(float4(positionWS, 1.0), ViewProj);
     Output.CameraPosition = CameraPosition;
     Output.ObjectPosition = float3(InstancesData[InstanceID].WorldMat[3].xyz);
-    Output.Mode = Mode;
     Output.InstanceIdx = InstanceID;
 
     return Output;

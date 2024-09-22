@@ -183,6 +183,18 @@ void D3D12Renderer::ExecuteCommandBuffers(const std::vector<std::shared_ptr<Comm
     }
 }
 
+VRAMStats D3D12Renderer::GetVRAMStats() const
+{
+    D3D12MA::Budget budget;
+    m_allocator->GetAllocator()->GetBudget(&budget, nullptr);
+
+    VRAMStats stats;
+    stats.Used = budget.UsageBytes;
+    stats.Total = budget.BudgetBytes;
+
+    return stats;
+}
+
 std::shared_ptr<GraphicsPipeline> D3D12Renderer::CreateGraphicsPipeline(GraphicsPipelineSpecs& specs)
 {
     return std::make_shared<GraphicsPipeline>(m_device, specs);

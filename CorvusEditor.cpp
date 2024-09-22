@@ -2,6 +2,7 @@
 
 #include <random>
 #include <set>
+#include <sstream>
 
 #include "Logger.h"
 #include "ImGui/ImGuizmo.h"
@@ -51,6 +52,8 @@ CorvusEditor::CorvusEditor()
     
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
         "Assets/SciFiHelmet_MetallicRoughness.png", { -9.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+
+    AddLightToScene({ -7.5f, 1.0f, 0.0f }, {}, true);
 
     constexpr bool pointLightsDemo = true;
     if(pointLightsDemo)
@@ -438,7 +441,6 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Begin("Debug GBuffer");
         ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
-        ImGui::Image((ImTextureID)GBuffer.WorldPositionRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::End();

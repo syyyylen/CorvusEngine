@@ -2,8 +2,21 @@
 
 Texture2D Albedo : register(t2);
 Texture2D Normal : register(t3);
-Texture2D WorldPosition : register(t4);
-Texture2D MetallicRoughness : register(t5);
+Texture2D MetallicRoughness : register(t4);
+Texture2D Depth : register(t5);
+
+cbuffer CBuf : register(b0)
+{
+    row_major float4x4 ViewProj;
+    float Time;
+    float3 CameraPosition;
+    int Mode;
+    float3 DirLightDirection;
+    float DirLightIntensity;
+    float2 ScreenDimensions;
+    float Padding;
+    row_major float4x4 InvViewProj;
+};
 
 struct PointLight
 {
@@ -25,8 +38,7 @@ struct PixelIn
     float4 Position : SV_POSITION;
     float3 CameraPosition : TEXCOORD0;
     float3 ObjectPosition : TEXCOORD1;
-    int Mode : TEXCOORD2;
-    int InstanceIdx : TEXCOORD3;
+    int InstanceIdx : TEXCOORD2;
 };
 
 float DoAttenuation(PointLight light, float distance)
@@ -39,12 +51,19 @@ float4 Main(PixelIn Input) : SV_TARGET
     PointLight lightInfo = InstancesData2[Input.InstanceIdx];
     float4 albedo = float4(Albedo.Load(int3(Input.Position.xy, 0)).xyz, 1.0);
     float3 normal = normalize(Normal.Load(int3(Input.Position.xy, 0)).xyz);
-    float3 positionWS = WorldPosition.Load(int3(Input.Position.xy, 0)).xyz;
     float3 metallicRoughness = MetallicRoughness.Load(int3(Input.Position.xy, 0)).xyz;
+    float depth = Depth.Load(int3(Input.Position.xy, 0)).x;
 
-    float3 view = normalize(Input.CameraPosition - positionWS);
+    float2 Texcoord = Input.Position.xy / ScreenDimensions;
+    float4 clipSpacePosition = float4(Texcoord * 2.0 - 1.0, depth, 1.0);
+    clipSpacePosition.y *= -1.0;
 
-    float3 l = Input.ObjectPosition - positionWS;
+    float4 worldSpacePosition = mul(clipSpacePosition, InvViewProj);
+    worldSpacePosition /= worldSpacePosition.w;
+
+    float3 view = normalize(Input.CameraPosition - worldSpacePosition.xyz);
+
+    float3 l = Input.ObjectPosition - worldSpacePosition.xyz;
     float d = length(l);
     if(d > lightInfo.Radius)
         discard;

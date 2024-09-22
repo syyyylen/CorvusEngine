@@ -11,6 +11,12 @@
 #include "Uploader.h"
 #include "Sampler.h"
 
+struct VRAMStats
+{
+    uint64_t Used;
+    uint64_t Total;
+};
+
 class D3D12Renderer
 {
 public:
@@ -28,6 +34,7 @@ public:
 
     std::shared_ptr<CommandList> GetCurrentCommandList() { return m_commandBuffers[m_frameIndex]; }
     std::shared_ptr<Texture> GetBackBuffer() { return m_swapChain->GetTexture(m_frameIndex); }
+    VRAMStats GetVRAMStats() const;
 
     std::shared_ptr<GraphicsPipeline> CreateGraphicsPipeline(GraphicsPipelineSpecs& specs);
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);

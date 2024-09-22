@@ -94,11 +94,9 @@ void Camera::UpdateViewMatrix()
 
 void Camera::UpdateInvViewProjMatrix(float width, float height)
 {
-    XMFLOAT4X4 screen = XMFLOAT4X4(2/width, 0, 0, 0, 0, -2/height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1);
-    XMMATRIX screenMat = XMLoadFloat4x4(&screen);
-    XMMATRIX proj = GetProjMatrix();
     XMMATRIX view = GetViewMatrix();
-    XMVECTOR projDet = XMMatrixDeterminant(proj);
-    XMVECTOR viewDet = XMMatrixDeterminant(view);
-    XMStoreFloat4x4(&m_invViewProj, screenMat * XMMatrixInverse(&projDet, proj * XMMatrixInverse(&viewDet, view)));
+    XMMATRIX proj = GetProjMatrix();
+    XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+    XMVECTOR viewProjDet = XMMatrixDeterminant(viewProj);
+    XMStoreFloat4x4(&m_invViewProj, XMMatrixInverse(&viewProjDet, viewProj));
 }

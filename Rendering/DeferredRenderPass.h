@@ -5,7 +5,6 @@ struct GBuffer
 {
     std::shared_ptr<Texture> AlbedoRenderTarget;
     std::shared_ptr<Texture> NormalRenderTarget;
-    std::shared_ptr<Texture> WorldPositionRenderTarget;
     std::shared_ptr<Texture> MetallicRoughnessRenderTarget;
     std::shared_ptr<Texture> DepthBuffer;
 };
@@ -25,9 +24,7 @@ private:
     std::shared_ptr<GraphicsPipeline> m_deferredDirLightPipeline;
     std::shared_ptr<GraphicsPipeline> m_deferredPointLightPipeline;
     std::shared_ptr<Buffer> m_sceneConstantBuffer;
-    std::shared_ptr<Buffer> m_lightingConstantBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
-    std::shared_ptr<Buffer> m_screenQuadVertexBuffer;
     std::shared_ptr<RenderItem> m_pointLightMesh;
     std::shared_ptr<Buffer> m_instancedLightsInstanceDataTransformBuffer;
     std::shared_ptr<Buffer> m_instancedLightsInstanceDataInfoBuffer;
