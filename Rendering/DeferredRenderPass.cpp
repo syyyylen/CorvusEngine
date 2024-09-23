@@ -62,7 +62,6 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_GBuffer.NormalRenderTarget.reset();
     m_GBuffer.MetallicRoughnessRenderTarget.reset();
     m_GBuffer.DepthBuffer.reset();
-    m_renderTexture.reset();
     
     m_GBuffer.DepthBuffer = renderer->CreateTexture(width, height, TextureFormat::R32Depth, TextureType::DepthTarget);
     renderer->CreateDepthView(m_GBuffer.DepthBuffer);
@@ -81,13 +80,9 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_GBuffer.MetallicRoughnessRenderTarget = renderer->CreateTexture(width, height, TextureFormat::R11G11B10Float, TextureType::RenderTarget);
     renderer->CreateRenderTargetView(m_GBuffer.MetallicRoughnessRenderTarget);
     renderer->CreateShaderResourceView(m_GBuffer.MetallicRoughnessRenderTarget);
-
-    m_renderTexture = renderer->CreateTexture(width, height, TextureFormat::RGBA8, TextureType::RenderTarget);
-    renderer->CreateRenderTargetView(m_renderTexture);
-    renderer->CreateShaderResourceView(m_renderTexture);
 }
 
-void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData)
+void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget)
 {
     // ------------------------------------------------------------- Geometry Pass (GBuffer --------------------------------------------------------------------
     auto view = camera.GetViewMatrix();
@@ -187,8 +182,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     readBatchedBarriers.emplace(m_GBuffer.DepthBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
     commandList->ImageBarrier(readBatchedBarriers);
 
-    commandList->ImageBarrier(m_renderTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    commandList->BindRenderTargets({ m_renderTexture }, nullptr);
+    commandList->ImageBarrier(renderTarget.RenderTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    commandList->BindRenderTargets({ renderTarget.RenderTexture }, nullptr);
     
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredDirLightPipeline);
@@ -242,5 +237,5 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindIndexBuffer(m_pointLightMesh->GetPrimitives()[0].m_indicesBuffer);
     commandList->DrawIndexed(m_pointLightMesh->GetPrimitives()[0].m_indexCount, globalPassData.PointLights.size());
     
-    commandList->ImageBarrier(m_renderTexture, D3D12_RESOURCE_STATE_GENERIC_READ);
+    commandList->ImageBarrier(renderTarget.RenderTexture, D3D12_RESOURCE_STATE_GENERIC_READ);
 }

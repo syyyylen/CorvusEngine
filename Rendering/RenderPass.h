@@ -29,12 +29,17 @@ struct RenderMeshData
     std::shared_ptr<Buffer> InstancesDataBuffer;
 };
 
+struct RenderTargetInfo
+{
+    std::shared_ptr<Texture> RenderTexture;
+    std::shared_ptr<Texture> DepthBuffer;
+};
+
 class RenderPass
 {
 public:
     virtual ~RenderPass() = default;
     virtual void Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) = 0;
-    virtual void Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData) = 0;
+    virtual void Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget) = 0;
     virtual void OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) = 0;
-    virtual std::shared_ptr<Texture> GetRenderTexture() = 0;
 };

@@ -32,7 +32,7 @@ void TransparencyRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, i
     renderer->CreateDepthView(m_depthBuffer);
 }
 
-void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData)
+void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTargetInfo)
 {
     auto view = camera.GetViewMatrix();
     auto proj = camera.GetProjMatrix();

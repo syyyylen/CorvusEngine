@@ -41,14 +41,12 @@ private:
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<Buffer> m_lightsConstantBuffer;
     std::shared_ptr<Sampler> m_textureSampler;
-    
+
+    std::shared_ptr<Texture> m_sceneRenderTexture;
     std::shared_ptr<RenderPass> m_deferredPass;
-    std::shared_ptr<RenderPass> m_forwardPass;
+    std::shared_ptr<RenderPass> m_skyboxPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     
-    // std::vector<std::shared_ptr<RenderItem>> m_opaqueRenderItems;
-    // std::vector<std::shared_ptr<RenderItem>> m_transparentRenderItems;
-
     std::shared_ptr<ResourcesManager> m_resourceManager;
 
     std::shared_ptr<Scene> m_scene;

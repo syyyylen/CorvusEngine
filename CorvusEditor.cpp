@@ -15,6 +15,7 @@
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
 #include "Rendering/RenderingLayouts.h"
+#include "Rendering/SkyBoxRenderPass.h"
 #include "Rendering/TransparencyRenderPass.h"
 #include "RHI/D3D12Renderer.h"
 
@@ -42,6 +43,13 @@ CorvusEditor::CorvusEditor()
 
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
+    m_skyboxPass = std::make_shared<SkyBoxRenderPass>();
+    m_skyboxPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
+    m_sceneRenderTexture = m_renderer->CreateTexture(defaultWidth, defaultHeight, TextureFormat::RGBA8, TextureType::RenderTarget);
+    m_renderer->CreateRenderTargetView(m_sceneRenderTexture);
+    m_renderer->CreateShaderResourceView(m_sceneRenderTexture);
 
     m_scene = std::make_shared<Scene>("DemoScene");
 
@@ -219,8 +227,14 @@ void CorvusEditor::Run()
         commandList->BindRenderTargets({ backbuffer }, nullptr);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
 
-        m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs);
-        // m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
+        RenderTargetInfo rtInfo;
+        rtInfo.RenderTexture = m_sceneRenderTexture;
+        
+        m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
+
+        rtInfo.DepthBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer().DepthBuffer;
+        
+        m_skyboxPass->Pass(m_renderer, passData, m_camera, {}, rtInfo);
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
         
@@ -473,11 +487,18 @@ void CorvusEditor::RenderUI(float width, float height)
         if(m_viewportCachedSize.x != viewportSize.x || m_viewportCachedSize.y != viewportSize.y)
         {
             m_viewportCachedSize = viewportSize;
+
+            m_sceneRenderTexture.reset();
+            m_sceneRenderTexture = m_renderer->CreateTexture(m_viewportCachedSize.x, m_viewportCachedSize.y, TextureFormat::RGBA8, TextureType::RenderTarget);
+            m_renderer->CreateRenderTargetView(m_sceneRenderTexture);
+            m_renderer->CreateShaderResourceView(m_sceneRenderTexture);
+            
             m_deferredPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
+            m_skyboxPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             UpdateProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);
         }
 
-        ImGui::Image((ImTextureID)deferredPass->GetRenderTexture()->m_srvUav.GPU.ptr, ImVec2(m_viewportCachedSize.x , m_viewportCachedSize.y));
+        ImGui::Image((ImTextureID)m_sceneRenderTexture->m_srvUav.GPU.ptr, ImVec2(m_viewportCachedSize.x , m_viewportCachedSize.y));
 
         if(m_selectedGo != nullptr)
         {

@@ -62,3 +62,9 @@ struct InstanceData
     int HasNormalMap;
     int HasMetallicRoughness;
 };
+
+struct SkyBoxConstantBuffer
+{
+    DirectX::XMFLOAT4X4 ViewProj;
+    DirectX::XMFLOAT3 CameraPosition;
+};
