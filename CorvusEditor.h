@@ -55,6 +55,7 @@ private:
     std::shared_ptr<GameObject> m_selectedGo;
 
     std::unordered_map<std::string, std::shared_ptr<Buffer>> m_meshesInstancesBuffers;
+    std::unordered_map<std::string, int> m_meshesInstancesCount;
 
     float m_startTime;
     float m_lastTime;

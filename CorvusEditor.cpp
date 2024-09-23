@@ -83,6 +83,12 @@ CorvusEditor::CorvusEditor()
         }
     }
 
+    for(auto pair : m_meshesInstancesCount)
+    {
+        auto instancesBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * pair.second, sizeof(InstanceData), BufferType::Structured, false);
+        m_meshesInstancesBuffers.emplace(pair.first, instancesBuffer);
+    }
+
     m_startTime = clock();
 
     m_window->Maximize();
@@ -273,8 +279,16 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, cons
     if(uploader.HasCommands())
         m_renderer->FlushUploader(uploader);
 
-    auto instancesBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
-    m_meshesInstancesBuffers.emplace(modelPath, instancesBuffer);
+    auto idRmd = m_meshesInstancesCount.find(modelPath);
+    if(idRmd != m_meshesInstancesCount.end())
+    {
+        int& count = idRmd->second;
+        count++;
+    }
+    else
+    {
+        m_meshesInstancesCount.emplace(modelPath, 1);
+    }
 
     auto go = m_scene->CreateGameObject(name, position, rotation, scale);
     auto meshComp = go->AddComponent<MeshComponent>();
