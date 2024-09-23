@@ -61,8 +61,8 @@ CorvusEditor::CorvusEditor()
         m_dirLightIntensity = 0.1f;
         
         constexpr float space = 3.0f;
-        constexpr int row = 12;
-        constexpr int column = 12;
+        constexpr int row = 16;
+        constexpr int column = 14;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
@@ -134,16 +134,9 @@ void CorvusEditor::Run()
         m_camera.UpdateViewMatrix();
         m_camera.UpdateInvViewProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);
 
-        // --------------------------------------------- Terrible temporary way to ECS data -> renderer -----------------------------------------------
+        // ----------------------------------------------------------- ECS data -> renderer ----------------------------------------------------------
         
-        // TODO this is WIP while implementing basic ECS. Find a proper way to iterate over meshes
-        for(const auto go : m_scene->m_gameObjects)
-        {
-            if(const auto meshComp = go->GetComponent<MeshComponent>())
-                meshComp->GetRenderItem()->m_transforms.clear();
-        }
-        
-        std::set<std::shared_ptr<RenderItem>> ri;
+        std::unordered_map<std::string, RenderMeshData> renderMeshesData;
         std::vector<PointLight> pointLights;
         for(const auto go : m_scene->m_gameObjects)
         {
@@ -152,8 +145,23 @@ void CorvusEditor::Run()
                 if(const auto meshComp = go->GetComponent<MeshComponent>())
                 {
                     auto renderItem = meshComp->GetRenderItem();
-                    renderItem->m_transforms.emplace_back(tfComp->m_transform);
-                    ri.insert(renderItem);
+
+                    auto idRmd = renderMeshesData.find(renderItem->GetMeshIdentifier());
+                    if(idRmd != renderMeshesData.end()) // RMD already exists for this mesh, let's add the transform only
+                    {
+                        auto& rmd = idRmd->second;
+                        rmd.InstancesTransforms.emplace_back(tfComp->m_transform);
+                    }
+                    else
+                    {
+                        RenderMeshData rmd;
+                        rmd.MeshIdentifier = renderItem->GetMeshIdentifier();
+                        rmd.InstancesTransforms.emplace_back(tfComp->m_transform);
+                        rmd.Material = renderItem->GetMaterial();
+                        rmd.Primitives = renderItem->GetPrimitives();
+                        rmd.InstancesDataBuffer = m_meshesInstancesBuffers.find(renderItem->GetMeshIdentifier())->second;
+                        renderMeshesData.emplace(renderItem->GetMeshIdentifier(), rmd);
+                    }
                 }
 
                 if(const auto pointLightComp = go->GetComponent<PointLightComponent>())
@@ -163,11 +171,11 @@ void CorvusEditor::Run()
                 }
             }
         }
-        
-        std::vector<std::shared_ptr<RenderItem>> renderItems;
-        for(auto r : ri)
-            renderItems.emplace_back(r);
 
+        std::vector<RenderMeshData> RMDs;
+        for(auto idRdm : renderMeshesData)
+            RMDs.emplace_back(idRdm.second);
+        
         // ------------------------------------------------------------- Lights Update --------------------------------------------------------------------
         for(auto& pointLight : pointLights)
         {
@@ -205,7 +213,7 @@ void CorvusEditor::Run()
         commandList->BindRenderTargets({ backbuffer }, nullptr);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
 
-        m_deferredPass->Pass(m_renderer, passData, m_camera, renderItems);
+        m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs);
         // m_transparencyPass->Pass(m_renderer, passData, m_camera, m_transparentRenderItems);
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
@@ -265,8 +273,8 @@ std::shared_ptr<RenderItem> CorvusEditor::AddModelToScene(std::string name, cons
     if(uploader.HasCommands())
         m_renderer->FlushUploader(uploader);
 
-    if(model->m_instancesDataBuffer == nullptr)
-        model->m_instancesDataBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
+    auto instancesBuffer = m_renderer->CreateBuffer(sizeof(InstanceData) * MAX_INSTANCES, sizeof(InstanceData), BufferType::Structured, false);
+    m_meshesInstancesBuffers.emplace(modelPath, instancesBuffer);
 
     auto go = m_scene->CreateGameObject(name, position, rotation, scale);
     auto meshComp = go->AddComponent<MeshComponent>();

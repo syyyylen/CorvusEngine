@@ -32,7 +32,7 @@ void TransparencyRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, i
     renderer->CreateDepthView(m_depthBuffer);
 }
 
-void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
+void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData)
 {
     auto view = camera.GetViewMatrix();
     auto proj = camera.GetProjMatrix();
@@ -60,22 +60,22 @@ void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const
     commandList->BindConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 
-    for(const auto renderItem : renderItems)
-    {
-        auto& material = renderItem->GetMaterial();
-
-        if(material.HasAlbedo)
-            commandList->BindGraphicsShaderResource(material.Albedo, 3);
-
-        if(material.HasNormal)
-            commandList->BindGraphicsShaderResource(material.Normal, 4);
-            
-        const auto primitives = renderItem->GetPrimitives();
-        for(const auto& primitive : primitives)
-        {
-            commandList->BindVertexBuffer(primitive.m_vertexBuffer);
-            commandList->BindIndexBuffer(primitive.m_indicesBuffer);
-            commandList->DrawIndexed(primitive.m_indexCount);
-        }
-    }
+    // for(const auto renderItem : renderItems)
+    // {
+    //     auto& material = renderItem->GetMaterial();
+    //
+    //     if(material.HasAlbedo)
+    //         commandList->BindGraphicsShaderResource(material.Albedo, 3);
+    //
+    //     if(material.HasNormal)
+    //         commandList->BindGraphicsShaderResource(material.Normal, 4);
+    //         
+    //     const auto primitives = renderItem->GetPrimitives();
+    //     for(const auto& primitive : primitives)
+    //     {
+    //         commandList->BindVertexBuffer(primitive.m_vertexBuffer);
+    //         commandList->BindIndexBuffer(primitive.m_indicesBuffer);
+    //         commandList->DrawIndexed(primitive.m_indexCount);
+    //     }
+    // }
 }

@@ -54,6 +54,8 @@ private:
     std::shared_ptr<Scene> m_scene;
     std::shared_ptr<GameObject> m_selectedGo;
 
+    std::unordered_map<std::string, std::shared_ptr<Buffer>> m_meshesInstancesBuffers;
+
     float m_startTime;
     float m_lastTime;
     float m_elapsedTime;

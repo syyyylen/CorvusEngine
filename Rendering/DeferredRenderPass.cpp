@@ -87,7 +87,7 @@ void DeferredRenderPass::OnResize(std::shared_ptr<D3D12Renderer> renderer, int w
     renderer->CreateShaderResourceView(m_renderTexture);
 }
 
-void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<std::shared_ptr<RenderItem>>& renderItems)
+void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData)
 {
     // ------------------------------------------------------------- Geometry Pass (GBuffer --------------------------------------------------------------------
     auto view = camera.GetViewMatrix();
@@ -138,13 +138,12 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 1);
 
-    for(const auto renderItem : renderItems)
+    for(const auto renderMeshData : renderMeshesData)
     {
-        auto& material = renderItem->GetMaterial();
+        auto& material = renderMeshData.Material;
 
         std::vector<InstanceData> instancesData;
-        auto instancesTransforms = renderItem->m_transforms;
-        for(auto instanceTransform : instancesTransforms)
+        for(auto instanceTransform : renderMeshData.InstancesTransforms)
         {
             InstanceData instanceData;
             instanceData.WorldMat = instanceTransform;
@@ -155,11 +154,11 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         }
 
         void* dt;
-        renderItem->m_instancesDataBuffer->Map(0, 0, &dt);
-        memcpy(dt, instancesData.data(), sizeof(InstanceData) * renderItem->m_transforms.size());
-        renderItem->m_instancesDataBuffer->Unmap(0, 0);
+        renderMeshData.InstancesDataBuffer->Map(0, 0, &dt);
+        memcpy(dt, instancesData.data(), sizeof(InstanceData) * renderMeshData.InstancesTransforms.size());
+        renderMeshData.InstancesDataBuffer->Unmap(0, 0);
 
-        commandList->SetGraphicsShaderResource(renderItem->m_instancesDataBuffer, 5);
+        commandList->SetGraphicsShaderResource(renderMeshData.InstancesDataBuffer, 5);
 
         if(material.HasAlbedo)
             commandList->BindGraphicsShaderResource(material.Albedo, 2);
@@ -170,12 +169,12 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
         if(material.HasMetallicRoughness)
             commandList->BindGraphicsShaderResource(material.MetallicRoughness, 4);
             
-        const auto primitives = renderItem->GetPrimitives();
+        const auto primitives = renderMeshData.Primitives;
         for(const auto& primitive : primitives)
         {
             commandList->BindVertexBuffer(primitive.m_vertexBuffer);
             commandList->BindIndexBuffer(primitive.m_indicesBuffer);
-            commandList->DrawIndexed(primitive.m_indexCount, renderItem->m_transforms.size());
+            commandList->DrawIndexed(primitive.m_indexCount, renderMeshData.InstancesTransforms.size());
         }
     }
 
