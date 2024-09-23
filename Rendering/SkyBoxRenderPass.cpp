@@ -1,7 +1,11 @@
 ﻿#include "SkyBoxRenderPass.h"
 
+#include "DDSTextureLoader/DDSTextureLoader.h"
+
 void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
 {
+    m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
+    
     GraphicsPipelineSpecs skyboxSpecs;
     skyboxSpecs.FormatCount = 1;
     skyboxSpecs.Formats[0] = TextureFormat::RGBA8;
@@ -21,6 +25,31 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     
     m_sphereMesh = std::make_shared<RenderItem>();
     m_sphereMesh->ImportMesh(renderer, "Assets/sphere.gltf");
+
+    // TODO remove all this
+    HRESULT hr = DirectX::CreateDDSTextureFromFile12(renderer->GetDevice()->GetDevice(), renderer->GetCurrentCommandList()->GetCommandList(), L"Assets/skybox2.dds",m_cubeMap.Resource, m_cubeMap.UploadHeap);
+    if(FAILED(hr))
+    {
+        LOG(Error, "failed to create dds texture !!!");
+        std::string errorMsg = std::system_category().message(hr);
+        LOG(Error, errorMsg);
+    }
+
+    auto ShaderHeap = renderer->GetHeaps().ShaderHeap;
+    m_cubeMap.Handle = ShaderHeap->Allocate();
+    
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+    srvDesc.TextureCube.MostDetailedMip = 0;
+    srvDesc.TextureCube.MipLevels = m_cubeMap.Resource->GetDesc().MipLevels;
+    srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+    srvDesc.Format = m_cubeMap.Resource->GetDesc().Format;
+    renderer->GetDevice()->GetDevice()->CreateShaderResourceView(m_cubeMap.Resource.Get(), &srvDesc, m_cubeMap.Handle.CPU);
+
+    renderer->GetCurrentCommandList()->End();
+    renderer->ExecuteCommandBuffers({ renderer->GetCurrentCommandList() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    // TODO remove all this
 }
 
 void SkyBoxRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget)
@@ -48,6 +77,10 @@ void SkyBoxRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Globa
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_skyboxPipeline);
     commandList->BindConstantBuffer(m_constantBuffer, 0);
+    commandList->BindGraphicsSampler(m_textureSampler, 2);
+
+    // TODO remove this, just for test
+    commandList->GetCommandList()->SetGraphicsRootShaderResourceView(1, m_cubeMap.Handle.GPU.ptr);
 
     commandList->BindVertexBuffer(m_sphereMesh->GetPrimitives()[0].m_vertexBuffer);
     commandList->BindIndexBuffer(m_sphereMesh->GetPrimitives()[0].m_indicesBuffer);
