@@ -179,7 +179,7 @@ void CommandList::SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int 
 
 void CommandList::SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx)
 {
-    m_commandList->SetGraphicsRootShaderResourceView(idx, texture->m_srv.GPU.ptr);
+    m_commandList->SetGraphicsRootDescriptorTable(idx, texture->m_srv.GPU);
 }
 
 void CommandList::Draw(int vertexCount, int instanceCount)

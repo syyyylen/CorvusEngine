@@ -232,6 +232,7 @@ void CorvusEditor::Run()
         commandList->SetViewport(0, 0, width, height);
         commandList->BindRenderTargets({ backbuffer }, nullptr);
         commandList->ClearRenderTarget(backbuffer, 0.0f, 0.0f, 0.0f, 1.0f);
+        commandList->ClearRenderTarget(m_sceneRenderTexture, 0.0f, 0.0f, 0.0f, 1.0f);
 
         RenderTargetInfo rtInfo;
         rtInfo.RenderTexture = m_sceneRenderTexture;
