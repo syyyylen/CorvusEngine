@@ -27,7 +27,10 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_sphereMesh->ImportMesh(renderer, "Assets/sphere.gltf");
 
     // TODO remove all this
-    HRESULT hr = DirectX::CreateDDSTextureFromFile12(renderer->GetDevice()->GetDevice(), renderer->GetCurrentCommandList()->GetCommandList(), L"Assets/skybox2.dds",m_cubeMap.Resource, m_cubeMap.UploadHeap);
+    auto cmdList = std::make_shared<CommandList>(renderer->GetDevice(), renderer->GetHeaps(), D3D12_COMMAND_LIST_TYPE_DIRECT);
+    cmdList->Begin();
+    
+    HRESULT hr = DirectX::CreateDDSTextureFromFile12(renderer->GetDevice()->GetDevice(), cmdList->GetCommandList(), L"Assets/skymap.dds",m_cubeMap.Resource, m_cubeMap.UploadHeap);
     if(FAILED(hr))
     {
         LOG(Error, "failed to create dds texture !!!");
@@ -47,8 +50,10 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     srvDesc.Format = m_cubeMap.Resource->GetDesc().Format;
     renderer->GetDevice()->GetDevice()->CreateShaderResourceView(m_cubeMap.Resource.Get(), &srvDesc, m_cubeMap.Handle.CPU);
 
-    renderer->GetCurrentCommandList()->End();
-    renderer->ExecuteCommandBuffers({ renderer->GetCurrentCommandList() }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    cmdList->End();
+    renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+    renderer->WaitForGPU();
     // TODO remove all this
 }
 

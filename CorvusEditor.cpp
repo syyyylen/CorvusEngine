@@ -481,10 +481,6 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::End();
 
-        ImGui::Begin("Debug SkyBox");
-        ImGui::Image((ImTextureID)std::static_pointer_cast<SkyBoxRenderPass>(m_skyboxPass)->m_cubeMap.Handle.GPU.ptr, ImVec2(320 * 2, 180 * 2));
-        ImGui::End();
-
         ImGui::Begin("Viewport");
         
         auto viewportSize = ImGui::GetContentRegionAvail();
