@@ -177,6 +177,11 @@ void CommandList::SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int 
     m_commandList->SetGraphicsRootShaderResourceView(idx, buffer->GetResource().Resource->GetGPUVirtualAddress());
 }
 
+void CommandList::SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx)
+{
+    m_commandList->SetGraphicsRootShaderResourceView(idx, texture->m_srv.GPU.ptr);
+}
+
 void CommandList::Draw(int vertexCount, int instanceCount)
 {
     m_commandList->DrawInstanced(vertexCount, instanceCount, 0, 0);

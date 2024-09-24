@@ -63,10 +63,16 @@ CorvusEditor::CorvusEditor()
 
     AddLightToScene({ -7.5f, 1.0f, 0.0f }, {}, true);
 
-    constexpr bool pointLightsDemo = true;
+    AddModelToScene("DamagedHelmet", "Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg",
+        "Assets/DamagedHelmet_metalRoughness.jpg", { -12.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+
+    AddLightToScene({ -13.5f, 1.0f, 0.0f }, {}, true);
+
+    constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
     {
         m_dirLightIntensity = 0.1f;
+        m_enableSkyBox = false;
         
         constexpr float space = 3.0f;
         constexpr int row = 16;
@@ -232,9 +238,11 @@ void CorvusEditor::Run()
         
         m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
 
-        rtInfo.DepthBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer().DepthBuffer;
-        
-        m_skyboxPass->Pass(m_renderer, passData, m_camera, {}, rtInfo);
+        if(m_enableSkyBox)
+        {
+            rtInfo.DepthBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer().DepthBuffer;
+            m_skyboxPass->Pass(m_renderer, passData, m_camera, {}, rtInfo);
+        }
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
         
@@ -408,6 +416,8 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Separator();
         ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
         ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
+        ImGui::Separator();
+        ImGui::Checkbox("Enable SkyBox", &m_enableSkyBox);
         ImGui::End();
 
         ImGui::Begin("Debug Point Lights");

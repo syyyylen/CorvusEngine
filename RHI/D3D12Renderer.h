@@ -10,6 +10,7 @@
 #include "SwapChain.h"
 #include "Uploader.h"
 #include "Sampler.h"
+#include "TextureCube.h"
 
 struct VRAMStats
 {
@@ -35,8 +36,6 @@ public:
     std::shared_ptr<CommandList> GetCurrentCommandList() { return m_commandBuffers[m_frameIndex]; }
     std::shared_ptr<Texture> GetBackBuffer() { return m_swapChain->GetTexture(m_frameIndex); }
     VRAMStats GetVRAMStats() const;
-    std::shared_ptr<Device> GetDevice() { return m_device; } // TODO remove this, temp for cubemap test
-    Heaps GetHeaps() { return m_heaps; } // TODO remove this, temp for cubemap test
 
     std::shared_ptr<GraphicsPipeline> CreateGraphicsPipeline(GraphicsPipelineSpecs& specs);
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);
@@ -47,6 +46,7 @@ public:
     Uploader CreateUploader();
     std::shared_ptr<Texture> CreateTexture(int width, int height, TextureFormat format, TextureType type);
     std::shared_ptr<Sampler> CreateSampler(D3D12_TEXTURE_ADDRESS_MODE addressMode, D3D12_FILTER filter);
+    std::shared_ptr<TextureCube> CreateTextureCube(const std::wstring& filePath);
 
     void FlushUploader(Uploader& uploader);
     void WaitForGPU();

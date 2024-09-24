@@ -70,13 +70,15 @@ private:
     bool m_mouseLocked = true;
 
     float m_dirLightDirection[3] = { 1.0f, -1.0f, -1.0f };
-    float m_dirLightIntensity = 2.0;
+    float m_dirLightIntensity = 2.5;
 
     // TODO remove this
     float m_testLightConstAttenuation = 0.65f;
     float m_testLightLinearAttenuation = 0.1f;
     float m_testLightQuadraticAttenuation = 0.02f;
     // DirectX::XMFLOAT4 m_testLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    bool m_enableSkyBox = true;
     bool m_enablePointLights = true;
     bool m_movePointLights = false;
     float m_movePointLightsSpeed = 0.8f;

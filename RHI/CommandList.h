@@ -6,6 +6,7 @@
 #include "GraphicsPipeline.h"
 #include "Sampler.h"
 #include "Texture.h"
+#include "TextureCube.h"
 
 enum class Topology
 {
@@ -39,6 +40,7 @@ public:
     void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx);
+    void SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx);
     void Draw(int vertexCount, int instanceCount = 1);
     void DrawIndexed(int indexCount, int instanceCount = 1);
     void CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src);

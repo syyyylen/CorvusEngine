@@ -240,6 +240,20 @@ std::shared_ptr<Sampler> D3D12Renderer::CreateSampler(D3D12_TEXTURE_ADDRESS_MODE
     return std::make_shared<Sampler>(m_device, m_heaps.SamplerHeap, addressMode, filter);
 }
 
+std::shared_ptr<TextureCube> D3D12Renderer::CreateTextureCube(const std::wstring& filePath)
+{
+    auto cmdList = std::make_shared<CommandList>(m_device, m_heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    cmdList->Begin();
+    
+    auto TexCube = std::make_shared<TextureCube>(m_device, cmdList, filePath, m_heaps);
+    
+    cmdList->End();
+    ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    WaitForGPU();
+    
+    return TexCube;
+}
+
 void D3D12Renderer::FlushUploader(Uploader& uploader)
 {
     uploader.m_commandList->Begin();
