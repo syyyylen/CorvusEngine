@@ -23,8 +23,11 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_constantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_constantBuffer);
 
-    m_prefilterConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
-    renderer->CreateConstantBuffer(m_prefilterConstantBuffer);
+    for(int i = 0; i < 5; i++)
+    {
+        m_prefilterConstantBuffers[i] = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+        renderer->CreateConstantBuffer(m_prefilterConstantBuffers[i]);
+    }
     
     m_sphereMesh = std::make_shared<RenderItem>();
     m_sphereMesh->ImportMesh(renderer, "Assets/sphere.gltf");
@@ -66,11 +69,11 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
         cb.Roughness = roughness;
         
         void* data;
-        m_prefilterConstantBuffer->Map(0, 0, &data);
+        m_prefilterConstantBuffers[i]->Map(0, 0, &data);
         memcpy(data, &cb, sizeof(PrefilterMapFilterSettings));
-        m_prefilterConstantBuffer->Unmap(0, 0);
+        m_prefilterConstantBuffers[i]->Unmap(0, 0);
         
-        cmdList->BindComputeConstantBuffer(m_prefilterConstantBuffer, 3);
+        cmdList->BindComputeConstantBuffer(m_prefilterConstantBuffers[i], 3);
         cmdList->BindComputeUnorderedAccessView(m_enviroMaps.PrefilterEnvMap, 0, i);
         cmdList->Dispatch(mipWidth / 32, mipHeigth / 32, 6);
     }

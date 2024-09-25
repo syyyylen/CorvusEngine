@@ -22,7 +22,7 @@ private:
     std::shared_ptr<GraphicsPipeline> m_skyboxPipeline;
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_constantBuffer;
-    std::shared_ptr<Buffer> m_prefilterConstantBuffer;
+    std::shared_ptr<Buffer> m_prefilterConstantBuffers[6];
     std::shared_ptr<RenderItem> m_sphereMesh;
 
     EnvironmentMaps m_enviroMaps;

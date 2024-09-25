@@ -70,8 +70,6 @@ CorvusEditor::CorvusEditor()
 
     AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -15.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
     
-    AddModelToScene("Sphere", "Assets/sphere.gltf", "", "", "", { -18.5f, 0.0f, 0.0f }, {}, { 1.0f, 1.0f, 1.0f });
-
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
     {
