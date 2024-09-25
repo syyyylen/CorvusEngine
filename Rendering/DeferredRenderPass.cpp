@@ -45,10 +45,6 @@ void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int
 
     m_deferredPointLightPipeline = renderer->CreateGraphicsPipeline(pointLightSpecs);
 
-    Shader cs;
-    ShaderCompiler::CompileShader("Shaders/TestComputeShader.hlsl", ShaderType::Compute, cs);
-    auto csPipeline = renderer->CreateComputePipeline(cs);
-
     m_sceneConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_sceneConstantBuffer);
 

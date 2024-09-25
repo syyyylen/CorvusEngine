@@ -103,7 +103,7 @@ void Texture::CreateShaderResource(std::shared_ptr<DescriptorHeap> heap)
     m_device->GetDevice()->CreateShaderResourceView(m_resource.Resource, &ShaderResourceView, m_srvUav.CPU);
 }
 
-void Texture::CreateStorage(std::shared_ptr<DescriptorHeap> heap)
+void Texture::CreateUnorderedAccessView(std::shared_ptr<DescriptorHeap> heap)
 {
     m_srvUav = heap->Allocate();
 

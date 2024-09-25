@@ -230,6 +230,11 @@ void D3D12Renderer::CreateRenderTargetView(std::shared_ptr<Texture> texture)
     texture->CreateRenderTarget(m_heaps.RtvHeap);
 }
 
+void D3D12Renderer::CreateUnorderedAccessView(std::shared_ptr<Texture> texture)
+{
+    texture->CreateUnorderedAccessView(m_heaps.ShaderHeap);    
+}
+
 Uploader D3D12Renderer::CreateUploader()
 {
     return Uploader(m_device, m_heaps, m_allocator);
@@ -257,6 +262,11 @@ std::shared_ptr<TextureCube> D3D12Renderer::CreateTextureCube(const std::wstring
     WaitForGPU();
     
     return TexCube;
+}
+
+std::shared_ptr<CommandList> D3D12Renderer::CreateGraphicsCommandList()
+{
+    return std::make_shared<CommandList>(m_device, m_heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 void D3D12Renderer::FlushUploader(Uploader& uploader)

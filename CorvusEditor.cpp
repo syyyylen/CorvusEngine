@@ -114,6 +114,26 @@ CorvusEditor::CorvusEditor()
 
     m_lastMousePos[0] = width/2.0f;
     m_lastMousePos[1] = height/2.0f;
+
+    // TODO remove this
+    Shader cs;
+    ShaderCompiler::CompileShader("Shaders/TestComputeShader.hlsl", ShaderType::Compute, cs);
+    auto csPipeline = m_renderer->CreateComputePipeline(cs);
+
+    int w = 1920;
+    int h = 1080;
+    m_testComputeTex = m_renderer->CreateTexture(1920, 1080, TextureFormat::RGBA8, TextureType::Storage);
+    m_renderer->CreateUnorderedAccessView(m_testComputeTex);
+
+    auto cmdList = m_renderer->CreateGraphicsCommandList();
+    cmdList->Begin();
+    cmdList->BindComputePipeline(csPipeline);
+    cmdList->BindComputeUnorderedAccessView(m_testComputeTex, 0);
+    cmdList->Dispatch(ceil(w / 8), ceil(h / 8), 1);
+    cmdList->End();
+    m_renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    m_renderer->WaitForGPU();
+    // TODO remove this
 }
 
 CorvusEditor::~CorvusEditor()
@@ -490,6 +510,10 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Image((ImTextureID)GBuffer.NormalRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::Image((ImTextureID)GBuffer.MetallicRoughnessRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
         ImGui::Image((ImTextureID)GBuffer.DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
+        ImGui::End();
+
+        ImGui::Begin("Debug Compute");
+        ImGui::Image((ImTextureID)m_testComputeTex->m_srvUav.GPU.ptr, ImVec2(1920 / 2, 1080 / 2));
         ImGui::End();
 
         ImGui::Begin("Viewport");

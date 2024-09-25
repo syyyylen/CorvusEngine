@@ -162,9 +162,20 @@ void CommandList::BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipelin
     m_commandList->SetGraphicsRootSignature(pipeline->GetRootSignature());
 }
 
+void CommandList::BindComputePipeline(std::shared_ptr<ComputePipeline> pipeline)
+{
+    m_commandList->SetPipelineState(pipeline->GetPipelineState());
+    m_commandList->SetComputeRootSignature(pipeline->GetRootSignature());
+}
+
 void CommandList::BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx)
 {
     m_commandList->SetGraphicsRootDescriptorTable(idx, texture->m_srvUav.GPU);
+}
+
+void CommandList::BindComputeUnorderedAccessView(std::shared_ptr<Texture> texture, int idx)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, texture->m_srvUav.GPU);
 }
 
 void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
@@ -190,6 +201,11 @@ void CommandList::Draw(int vertexCount, int instanceCount)
 void CommandList::DrawIndexed(int indexCount, int instanceCount)
 {
     m_commandList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+}
+
+void CommandList::Dispatch(int x, int y, int z)
+{
+    m_commandList->Dispatch(x, y, z);    
 }
 
 void CommandList::CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src)

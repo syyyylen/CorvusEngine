@@ -2,6 +2,7 @@
 #include <Core.h>
 
 #include "Buffer.h"
+#include "ComputePipeline.h"
 #include "Device.h"
 #include "GraphicsPipeline.h"
 #include "Sampler.h"
@@ -37,12 +38,15 @@ public:
     void BindIndexBuffer(std::shared_ptr<Buffer> buffer);
     void BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
+    void BindComputePipeline(std::shared_ptr<ComputePipeline> pipeline);
     void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);
+    void BindComputeUnorderedAccessView(std::shared_ptr<Texture> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx);
     void SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx);
     void Draw(int vertexCount, int instanceCount = 1);
     void DrawIndexed(int indexCount, int instanceCount = 1);
+    void Dispatch(int x, int y, int z);
     void CopyTextureToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Texture> src);
     void CopyBufferToBuffer(std::shared_ptr<Buffer> dst, std::shared_ptr<Buffer> src);
     void CopyBufferToTexture(std::shared_ptr<Texture> dst, std::shared_ptr<Buffer> src);

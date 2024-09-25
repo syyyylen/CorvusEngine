@@ -35,7 +35,7 @@ public:
     void CreateRenderTarget(std::shared_ptr<DescriptorHeap> heap);
     void CreateDepthTarget(std::shared_ptr<DescriptorHeap> heap);
     void CreateShaderResource(std::shared_ptr<DescriptorHeap> heap);
-    void CreateStorage(std::shared_ptr<DescriptorHeap> heap);
+    void CreateUnorderedAccessView(std::shared_ptr<DescriptorHeap> heap);
 
     void SetState(D3D12_RESOURCE_STATES state) { m_state = state; }
     D3D12_RESOURCE_STATES GetState() { return m_state; }
