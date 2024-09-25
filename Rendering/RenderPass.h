@@ -19,6 +19,7 @@ struct GlobalPassData
     float ViewportSizeX;
     float ViewportSizeY;
     std::shared_ptr<TextureCube> IrradianceMap;
+    std::shared_ptr<TextureCube> PrefilterEnvMap;
 };
 
 struct RenderMeshData

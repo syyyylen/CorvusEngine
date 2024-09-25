@@ -22,6 +22,9 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
 
     m_constantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
     renderer->CreateConstantBuffer(m_constantBuffer);
+
+    m_prefilterConstantBuffer = renderer->CreateBuffer(256, 0, BufferType::Constant, false);
+    renderer->CreateConstantBuffer(m_prefilterConstantBuffer);
     
     m_sphereMesh = std::make_shared<RenderItem>();
     m_sphereMesh->ImportMesh(renderer, "Assets/sphere.gltf");
@@ -29,21 +32,51 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_enviroMaps.SkyBox = renderer->LoadTextureCube(L"Assets/skymap.dds");
 
     m_enviroMaps.DiffuseIrradianceMap = renderer->CreateTextureCube(128, 128, TextureFormat::RGBA8);
+    m_enviroMaps.PrefilterEnvMap = renderer->CreateTextureCube(512, 512, TextureFormat::RGBA8);
 
-    Shader cs;
-    ShaderCompiler::CompileShader("Shaders/IrradianceComputeShader.hlsl", ShaderType::Compute, cs);
-    auto csPipeline = renderer->CreateComputePipeline(cs);
+    Shader irradianceCS;
+    ShaderCompiler::CompileShader("Shaders/IrradianceComputeShader.hlsl", ShaderType::Compute, irradianceCS);
+    auto irradianceCSPipeline = renderer->CreateComputePipeline(irradianceCS);
 
     auto cmdList = renderer->CreateGraphicsCommandList();
     cmdList->Begin();
-    cmdList->BindComputePipeline(csPipeline);
+    cmdList->BindComputePipeline(irradianceCSPipeline);
     cmdList->ImageBarrier(m_enviroMaps.DiffuseIrradianceMap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     cmdList->BindComputeUnorderedAccessView(m_enviroMaps.DiffuseIrradianceMap, 0, 0);
     cmdList->BindComputeShaderResource(m_enviroMaps.SkyBox, 1);
+    cmdList->BindComputeSampler(m_textureSampler, 2);
     cmdList->Dispatch(128 / 32, 128 / 32, 6);
     cmdList->ImageBarrier(m_enviroMaps.DiffuseIrradianceMap, D3D12_RESOURCE_STATE_GENERIC_READ);
-    cmdList->End();
 
+    Shader prefilterCS;
+    ShaderCompiler::CompileShader("Shaders/PrefilterEnvMapComputeShader.hlsl", ShaderType::Compute, prefilterCS);
+    auto prefilterCSPipeline = renderer->CreateComputePipeline(prefilterCS);
+
+    cmdList->BindComputePipeline(prefilterCSPipeline);
+    cmdList->ImageBarrier(m_enviroMaps.PrefilterEnvMap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cmdList->BindComputeShaderResource(m_enviroMaps.SkyBox, 1);
+    cmdList->BindComputeSampler(m_textureSampler, 2);
+    for(int i = 0; i < 5; i++)
+    {
+        UINT32 mipWidth = (UINT32)(512.0f * pow(0.5f, i));
+        UINT32 mipHeigth = (UINT32)(512.0f * pow(0.5f, i));
+        float roughness = (float)i/(float)(5 - 1);
+
+        PrefilterMapFilterSettings cb;
+        cb.Roughness = roughness;
+        
+        void* data;
+        m_prefilterConstantBuffer->Map(0, 0, &data);
+        memcpy(data, &cb, sizeof(PrefilterMapFilterSettings));
+        m_prefilterConstantBuffer->Unmap(0, 0);
+        
+        cmdList->BindComputeConstantBuffer(m_prefilterConstantBuffer, 3);
+        cmdList->BindComputeUnorderedAccessView(m_enviroMaps.PrefilterEnvMap, 0, i);
+        cmdList->Dispatch(mipWidth / 32, mipHeigth / 32, 6);
+    }
+    cmdList->ImageBarrier(m_enviroMaps.PrefilterEnvMap, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+    cmdList->End();
     renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
     renderer->WaitForGPU();
 }
@@ -72,7 +105,7 @@ void SkyBoxRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Globa
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_skyboxPipeline);
-    commandList->BindConstantBuffer(m_constantBuffer, 0);
+    commandList->BindGraphicsConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
     commandList->BindGraphicsShaderResource(m_enviroMaps.SkyBox, 1);
 

@@ -68,3 +68,9 @@ struct SkyBoxConstantBuffer
     DirectX::XMFLOAT4X4 ViewProj;
     DirectX::XMFLOAT3 CameraPosition;
 };
+
+struct PrefilterMapFilterSettings
+{
+    float Roughness;
+    float Padding[3];
+};

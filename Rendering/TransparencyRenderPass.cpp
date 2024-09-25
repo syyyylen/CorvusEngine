@@ -57,7 +57,7 @@ void TransparencyRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const
     commandList->BindGraphicsPipeline(m_forwardTransparencyPipeline);
     commandList->BindRenderTargets({ backbuffer }, m_depthBuffer);
     commandList->ClearDepthTarget(m_depthBuffer);
-    commandList->BindConstantBuffer(m_constantBuffer, 0);
+    commandList->BindGraphicsConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
 
     // for(const auto renderItem : renderItems)

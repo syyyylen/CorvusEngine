@@ -37,7 +37,8 @@ public:
     void SetTopology(Topology topology);
     void BindVertexBuffer(std::shared_ptr<Buffer> buffer);
     void BindIndexBuffer(std::shared_ptr<Buffer> buffer);
-    void BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
+    void BindGraphicsConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
+    void BindComputeConstantBuffer(std::shared_ptr<Buffer> buffer, int idx);
     void BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline);
     void BindComputePipeline(std::shared_ptr<ComputePipeline> pipeline);
     void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);

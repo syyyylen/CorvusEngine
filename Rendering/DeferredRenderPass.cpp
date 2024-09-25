@@ -130,7 +130,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredGeometryPipeline);
-    commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
+    commandList->BindGraphicsConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 1);
 
     for(const auto renderMeshData : renderMeshesData)
@@ -187,13 +187,14 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredDirLightPipeline);
-    commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
+    commandList->BindGraphicsConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 1);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.MetallicRoughnessRenderTarget, 4);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindGraphicsShaderResource(globalPassData.IrradianceMap, 6);
+    commandList->BindGraphicsShaderResource(globalPassData.PrefilterEnvMap, 7);
     commandList->Draw(6);
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------
@@ -203,7 +204,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
 
     commandList->SetTopology(Topology::TriangleList);
     commandList->BindGraphicsPipeline(m_deferredPointLightPipeline);
-    commandList->BindConstantBuffer(m_sceneConstantBuffer, 0);
+    commandList->BindGraphicsConstantBuffer(m_sceneConstantBuffer, 0);
     commandList->BindGraphicsShaderResource(m_GBuffer.AlbedoRenderTarget, 2);
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.MetallicRoughnessRenderTarget, 4);

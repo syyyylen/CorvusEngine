@@ -69,6 +69,8 @@ CorvusEditor::CorvusEditor()
     AddLightToScene({ -13.5f, 1.0f, 0.0f }, {}, true);
 
     AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -15.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
+    
+    AddModelToScene("Sphere", "Assets/sphere.gltf", "", "", "", { -18.5f, 0.0f, 0.0f }, {}, { 1.0f, 1.0f, 1.0f });
 
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
@@ -225,6 +227,7 @@ void CorvusEditor::Run()
         passData.ViewportSizeX = m_viewportCachedSize.x;
         passData.ViewportSizeY = m_viewportCachedSize.y;
         passData.IrradianceMap = m_skyboxPass->GetEnvironmentMaps().DiffuseIrradianceMap;
+        passData.PrefilterEnvMap = m_skyboxPass->GetEnvironmentMaps().PrefilterEnvMap;
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 

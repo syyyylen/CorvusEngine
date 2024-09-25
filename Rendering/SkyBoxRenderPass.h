@@ -6,6 +6,7 @@ struct EnvironmentMaps
 {
     std::shared_ptr<TextureCube> SkyBox;
     std::shared_ptr<TextureCube> DiffuseIrradianceMap;
+    std::shared_ptr<TextureCube> PrefilterEnvMap;
 };
 
 class SkyBoxRenderPass : public RenderPass
@@ -21,6 +22,7 @@ private:
     std::shared_ptr<GraphicsPipeline> m_skyboxPipeline;
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_constantBuffer;
+    std::shared_ptr<Buffer> m_prefilterConstantBuffer;
     std::shared_ptr<RenderItem> m_sphereMesh;
 
     EnvironmentMaps m_enviroMaps;

@@ -168,9 +168,14 @@ void CommandList::BindIndexBuffer(std::shared_ptr<Buffer> buffer)
     m_commandList->IASetIndexBuffer(&buffer->m_IBV);
 }
 
-void CommandList::BindConstantBuffer(std::shared_ptr<Buffer> buffer, int idx)
+void CommandList::BindGraphicsConstantBuffer(std::shared_ptr<Buffer> buffer, int idx)
 {
     m_commandList->SetGraphicsRootDescriptorTable(idx, buffer->m_descriptorHandle.GPU);
+}
+
+void CommandList::BindComputeConstantBuffer(std::shared_ptr<Buffer> buffer, int idx)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, buffer->m_descriptorHandle.GPU);
 }
 
 void CommandList::BindGraphicsPipeline(std::shared_ptr<GraphicsPipeline> pipeline)
