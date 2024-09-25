@@ -200,6 +200,11 @@ std::shared_ptr<GraphicsPipeline> D3D12Renderer::CreateGraphicsPipeline(Graphics
     return std::make_shared<GraphicsPipeline>(m_device, specs);
 }
 
+std::shared_ptr<ComputePipeline> D3D12Renderer::CreateComputePipeline(Shader& computeShader)
+{
+    return std::make_shared<ComputePipeline>(m_device, computeShader);
+}
+
 std::shared_ptr<Buffer> D3D12Renderer::CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback)
 {
     return std::make_shared<Buffer>(m_allocator, size, stride, type, readback);

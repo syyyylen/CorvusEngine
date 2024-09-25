@@ -5,32 +5,6 @@
 #include <d3d12shader.h>
 #include <dxcapi.h>
 
-ID3D12ShaderReflection* GetReflection(Shader& bytecode, D3D12_SHADER_DESC *desc)
-{
-    IDxcUtils* pUtils;
-    DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
-
-    DxcBuffer ShaderBuffer = {};
-    ShaderBuffer.Ptr = bytecode.Bytecode.data();
-    ShaderBuffer.Size = bytecode.Bytecode.size() * sizeof(uint32_t);
-    ID3D12ShaderReflection* pReflection;
-    HRESULT hr = pUtils->CreateReflection(&ShaderBuffer, IID_PPV_ARGS(&pReflection));
-    if(FAILED(hr))
-    {
-        LOG(Error, "GraphicsPipeline : failed to create reflection for shader !");
-        std::string errorMsg = std::system_category().message(hr);
-        LOG(Error, errorMsg);
-    }
-    pReflection->GetDesc(desc);
-    pUtils->Release();
-    return pReflection;
-}
-
-bool CompareShaderInput(const D3D12_SHADER_INPUT_BIND_DESC& A, const D3D12_SHADER_INPUT_BIND_DESC& B)
-{
-    return A.BindPoint < B.BindPoint;
-}
-
 GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipelineSpecs &specs)
 {
     Shader& vertexBytecode = specs.ShadersBytecodes[ShaderType::Vertex];
@@ -38,9 +12,6 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
 
     D3D12_SHADER_DESC VertexDesc = {};
     D3D12_SHADER_DESC PixelDesc = {};
-
-    std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
-    std::vector<std::string> InputElementSemanticNames;
 
     std::array<D3D12_ROOT_PARAMETER, 64> Parameters;
     int ParameterCount = 0;
@@ -51,8 +22,8 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     std::array<D3D12_SHADER_INPUT_BIND_DESC, 64> ShaderBinds;
     int BindCount = 0;
 
-    ID3D12ShaderReflection* pVertexReflection = GetReflection(vertexBytecode, &VertexDesc);
-    ID3D12ShaderReflection* pPixelReflection = GetReflection(fragmentBytecode, &PixelDesc);
+    ID3D12ShaderReflection* pVertexReflection = ShaderCompiler::GetReflection(vertexBytecode, &VertexDesc);
+    ID3D12ShaderReflection* pPixelReflection = ShaderCompiler::GetReflection(fragmentBytecode, &PixelDesc);
 
     for(int BoundResourceIndex = 0; BoundResourceIndex < VertexDesc.BoundResources; BoundResourceIndex++)
     {
@@ -70,7 +41,7 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
         BindCount++;
     }
 
-    std::sort(ShaderBinds.begin(), ShaderBinds.begin() + BindCount, CompareShaderInput);
+    std::sort(ShaderBinds.begin(), ShaderBinds.begin() + BindCount, ShaderCompiler::CompareShaderInput);
     std::vector<LPCSTR> processedBinds;
 
     for(int ShaderBindIndex = 0; ShaderBindIndex < BindCount; ShaderBindIndex++)
@@ -210,6 +181,9 @@ GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Device> device, GraphicsPipel
     
     Desc.SampleDesc.Count = 1;
 
+    std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescs;
+    std::vector<std::string> InputElementSemanticNames;
+    
     InputElementSemanticNames.reserve(VertexDesc.InputParameters);
     InputElementDescs.reserve(VertexDesc.InputParameters);
 

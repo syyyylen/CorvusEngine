@@ -101,3 +101,29 @@ void ShaderCompiler::CompileShader(const std::string& path, ShaderType type, Sha
 
     LOG(Debug, "ShaderCompiler : compiled : " + path);
 }
+
+ID3D12ShaderReflection* ShaderCompiler::GetReflection(Shader& bytecode, D3D12_SHADER_DESC* desc)
+{
+    IDxcUtils* pUtils;
+    DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
+
+    DxcBuffer ShaderBuffer = {};
+    ShaderBuffer.Ptr = bytecode.Bytecode.data();
+    ShaderBuffer.Size = bytecode.Bytecode.size() * sizeof(uint32_t);
+    ID3D12ShaderReflection* pReflection;
+    HRESULT hr = pUtils->CreateReflection(&ShaderBuffer, IID_PPV_ARGS(&pReflection));
+    if(FAILED(hr))
+    {
+        LOG(Error, "GraphicsPipeline : failed to create reflection for shader !");
+        std::string errorMsg = std::system_category().message(hr);
+        LOG(Error, errorMsg);
+    }
+    pReflection->GetDesc(desc);
+    pUtils->Release();
+    return pReflection;
+}
+
+bool ShaderCompiler::CompareShaderInput(const D3D12_SHADER_INPUT_BIND_DESC& A, const D3D12_SHADER_INPUT_BIND_DESC& B)
+{
+    return A.BindPoint < B.BindPoint;
+}

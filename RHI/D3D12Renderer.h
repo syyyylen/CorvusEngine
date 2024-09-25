@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include "CommandList.h"
 #include "CommandQueue.h"
+#include "ComputePipeline.h"
 #include "DescriptorHeap.h"
 #include "GraphicsPipeline.h"
 #include "SwapChain.h"
@@ -38,6 +39,7 @@ public:
     VRAMStats GetVRAMStats() const;
 
     std::shared_ptr<GraphicsPipeline> CreateGraphicsPipeline(GraphicsPipelineSpecs& specs);
+    std::shared_ptr<ComputePipeline> CreateComputePipeline(Shader& computeShader);
     std::shared_ptr<Buffer> CreateBuffer(uint64_t size, uint64_t stride, BufferType type, bool readback);
     void CreateConstantBuffer(std::shared_ptr<Buffer> buffer);
     void CreateDepthView(std::shared_ptr<Texture> texture);
