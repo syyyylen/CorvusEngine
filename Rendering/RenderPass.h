@@ -16,8 +16,9 @@ struct GlobalPassData
     int ViewMode;
     std::vector<PointLight> PointLights;
     DirectionalLightInfo DirectionalInfo;
-    float viewportSizeX;
-    float viewportSizeY;
+    float ViewportSizeX;
+    float ViewportSizeY;
+    std::shared_ptr<TextureCube> IrradianceMap;
 };
 
 struct RenderMeshData

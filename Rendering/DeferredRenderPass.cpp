@@ -97,8 +97,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     cbuf.Mode = globalPassData.ViewMode;
     cbuf.DirLightDirection = globalPassData.DirectionalInfo.Direction;
     cbuf.DirLightIntensity = globalPassData.DirectionalInfo.Intensity;
-    cbuf.ScreenDimensions[0] = globalPassData.viewportSizeX;
-    cbuf.ScreenDimensions[1] = globalPassData.viewportSizeY;
+    cbuf.ScreenDimensions[0] = globalPassData.ViewportSizeX;
+    cbuf.ScreenDimensions[1] = globalPassData.ViewportSizeY;
     DirectX::XMStoreFloat4x4(&cbuf.ViewProj, viewProj);
     DirectX::XMStoreFloat4x4(&cbuf.InvViewProj, invViewProj);
         
@@ -109,7 +109,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     
     auto commandList = renderer->GetCurrentCommandList();
 
-    commandList->SetViewport(0, 0, globalPassData.viewportSizeX, globalPassData.viewportSizeY);
+    commandList->SetViewport(0, 0, globalPassData.ViewportSizeX, globalPassData.ViewportSizeY);
 
     std::unordered_map<std::shared_ptr<Texture>, D3D12_RESOURCE_STATES> renderTargetsBatchedBarriers;
     renderTargetsBatchedBarriers.emplace(m_GBuffer.AlbedoRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -193,6 +193,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.NormalRenderTarget, 3);
     commandList->BindGraphicsShaderResource(m_GBuffer.MetallicRoughnessRenderTarget, 4);
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
+    commandList->BindGraphicsShaderResource(globalPassData.IrradianceMap, 6);
     commandList->Draw(6);
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------

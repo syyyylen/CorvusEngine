@@ -7,8 +7,10 @@
 #include "Window.h"
 #include "ECS/Scene.h"
 #include "ImGui/ImGuizmo.h"
+#include "Rendering/DeferredRenderPass.h"
 #include "RHI/D3D12Renderer.h"
 #include "Rendering/RenderPass.h"
+#include "Rendering/SkyBoxRenderPass.h"
 
 class CorvusEditor : public InputListener
 {
@@ -43,8 +45,8 @@ private:
     std::shared_ptr<Sampler> m_textureSampler;
 
     std::shared_ptr<Texture> m_sceneRenderTexture;
-    std::shared_ptr<RenderPass> m_deferredPass;
-    std::shared_ptr<RenderPass> m_skyboxPass;
+    std::shared_ptr<DeferredRenderPass> m_deferredPass;
+    std::shared_ptr<SkyBoxRenderPass> m_skyboxPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     
     std::shared_ptr<ResourcesManager> m_resourceManager;
@@ -70,7 +72,7 @@ private:
     bool m_mouseLocked = true;
 
     float m_dirLightDirection[3] = { 1.0f, -1.0f, -1.0f };
-    float m_dirLightIntensity = 2.5;
+    float m_dirLightIntensity = 1.0;
 
     // TODO remove this
     float m_testLightConstAttenuation = 0.65f;

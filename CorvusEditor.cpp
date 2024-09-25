@@ -68,6 +68,8 @@ CorvusEditor::CorvusEditor()
 
     AddLightToScene({ -13.5f, 1.0f, 0.0f }, {}, true);
 
+    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -15.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
+
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
     {
@@ -211,6 +213,7 @@ void CorvusEditor::Run()
             pointLight.QuadraticAttenuation = m_testLightQuadraticAttenuation;
         }
 
+        // --------------------------------------------------------- Global Pass Datas -----------------------------------------------------------------
         std::vector<PointLight> pl = {};
         GlobalPassData passData = {};
         passData.DeltaTime = dt;
@@ -219,8 +222,9 @@ void CorvusEditor::Run()
         passData.PointLights = m_enablePointLights ? pointLights : pl;
         passData.DirectionalInfo.Direction = { m_dirLightDirection[0], m_dirLightDirection[1], m_dirLightDirection[2] };
         passData.DirectionalInfo.Intensity = m_dirLightIntensity;
-        passData.viewportSizeX = m_viewportCachedSize.x;
-        passData.viewportSizeY = m_viewportCachedSize.y;
+        passData.ViewportSizeX = m_viewportCachedSize.x;
+        passData.ViewportSizeY = m_viewportCachedSize.y;
+        passData.IrradianceMap = m_skyboxPass->GetEnvironmentMaps().DiffuseIrradianceMap;
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
@@ -241,7 +245,7 @@ void CorvusEditor::Run()
 
         if(m_enableSkyBox)
         {
-            rtInfo.DepthBuffer = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass)->GetGBuffer().DepthBuffer;
+            rtInfo.DepthBuffer = m_deferredPass->GetGBuffer().DepthBuffer;
             m_skyboxPass->Pass(m_renderer, passData, m_camera, {}, rtInfo);
         }
 
@@ -412,11 +416,11 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Begin("Debug");
         ImGui::SliderFloat("FOV", &m_fov, 0.1f, 1.0f);
         ImGui::SliderFloat("Move Speed", &m_moveSpeed, 1.0f, 40.0f);
-        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness" };
-        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 6);
+        static const char* modes[] = { "Default", "Albedo", "Normal", "Depth", "WorldPosition", "MetallicRoughness", "Debug" };
+        ImGui::Combo("View Mode", (int*)&m_viewMode, modes, 7);
         ImGui::Separator();
         ImGui::SliderFloat3("DirLight Direction", m_dirLightDirection, -1.0f, 1.0f);
-        ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 5.0f);
+        ImGui::SliderFloat("DirLight Intensity", &m_dirLightIntensity, 0.0f, 3.0f);
         ImGui::Separator();
         ImGui::Checkbox("Enable SkyBox", &m_enableSkyBox);
         ImGui::End();
@@ -482,8 +486,7 @@ void CorvusEditor::RenderUI(float width, float height)
         }
         ImGui::End();
 
-        auto deferredPass = std::static_pointer_cast<DeferredRenderPass>(m_deferredPass);
-        auto GBuffer = deferredPass->GetGBuffer();
+        auto GBuffer = m_deferredPass->GetGBuffer();
         
         ImGui::Begin("Debug GBuffer");
         ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));

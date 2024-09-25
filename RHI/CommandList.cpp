@@ -215,6 +215,11 @@ void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
     m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
 }
 
+void CommandList::BindComputeSampler(std::shared_ptr<Sampler> sampler, int idx)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
+}
+
 void CommandList::SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx)
 {
     m_commandList->SetGraphicsRootShaderResourceView(idx, buffer->GetResource().Resource->GetGPUVirtualAddress());

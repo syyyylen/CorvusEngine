@@ -26,21 +26,22 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     m_sphereMesh = std::make_shared<RenderItem>();
     m_sphereMesh->ImportMesh(renderer, "Assets/sphere.gltf");
 
-    m_skyBox = renderer->LoadTextureCube(L"Assets/skymap.dds");
+    m_enviroMaps.SkyBox = renderer->LoadTextureCube(L"Assets/skymap.dds");
 
-    m_diffuseIrradianceMap = renderer->CreateTextureCube(128, 128, TextureFormat::RGBA8);
+    m_enviroMaps.DiffuseIrradianceMap = renderer->CreateTextureCube(128, 128, TextureFormat::RGBA8);
 
     Shader cs;
-    ShaderCompiler::CompileShader("Shaders/TestComputeShader.hlsl", ShaderType::Compute, cs);
+    ShaderCompiler::CompileShader("Shaders/IrradianceComputeShader.hlsl", ShaderType::Compute, cs);
     auto csPipeline = renderer->CreateComputePipeline(cs);
 
     auto cmdList = renderer->CreateGraphicsCommandList();
     cmdList->Begin();
     cmdList->BindComputePipeline(csPipeline);
-    cmdList->ImageBarrier(m_diffuseIrradianceMap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    cmdList->BindComputeUnorderedAccessView(m_diffuseIrradianceMap, 0, 0);
+    cmdList->ImageBarrier(m_enviroMaps.DiffuseIrradianceMap, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cmdList->BindComputeUnorderedAccessView(m_enviroMaps.DiffuseIrradianceMap, 0, 0);
+    cmdList->BindComputeShaderResource(m_enviroMaps.SkyBox, 1);
     cmdList->Dispatch(128 / 32, 128 / 32, 6);
-    cmdList->ImageBarrier(m_diffuseIrradianceMap, D3D12_RESOURCE_STATE_GENERIC_READ);
+    cmdList->ImageBarrier(m_enviroMaps.DiffuseIrradianceMap, D3D12_RESOURCE_STATE_GENERIC_READ);
     cmdList->End();
 
     renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -64,7 +65,7 @@ void SkyBoxRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Globa
 
     auto commandList = renderer->GetCurrentCommandList();
 
-    commandList->SetViewport(0, 0, globalPassData.viewportSizeX, globalPassData.viewportSizeY);
+    commandList->SetViewport(0, 0, globalPassData.ViewportSizeX, globalPassData.ViewportSizeY);
 
     commandList->ImageBarrier(renderTarget.RenderTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->BindRenderTargets({ renderTarget.RenderTexture }, renderTarget.DepthBuffer);
@@ -73,7 +74,7 @@ void SkyBoxRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Globa
     commandList->BindGraphicsPipeline(m_skyboxPipeline);
     commandList->BindConstantBuffer(m_constantBuffer, 0);
     commandList->BindGraphicsSampler(m_textureSampler, 2);
-    commandList->BindGraphicsShaderResource(m_skyBox, 1);
+    commandList->BindGraphicsShaderResource(m_enviroMaps.SkyBox, 1);
 
     commandList->BindVertexBuffer(m_sphereMesh->GetPrimitives()[0].m_vertexBuffer);
     commandList->BindIndexBuffer(m_sphereMesh->GetPrimitives()[0].m_indicesBuffer);

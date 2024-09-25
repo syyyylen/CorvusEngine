@@ -2,6 +2,12 @@
 #include "RenderPass.h"
 #include <wrl/client.h>
 
+struct EnvironmentMaps
+{
+    std::shared_ptr<TextureCube> SkyBox;
+    std::shared_ptr<TextureCube> DiffuseIrradianceMap;
+};
+
 class SkyBoxRenderPass : public RenderPass
 {
 public:
@@ -9,11 +15,13 @@ public:
     void Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget) override;
     void OnResize(std::shared_ptr<D3D12Renderer> renderer, int width, int height) override;
 
+    EnvironmentMaps GetEnvironmentMaps() { return m_enviroMaps; }
+
 private:
     std::shared_ptr<GraphicsPipeline> m_skyboxPipeline;
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<RenderItem> m_sphereMesh;
-    std::shared_ptr<TextureCube> m_skyBox;
-    std::shared_ptr<TextureCube> m_diffuseIrradianceMap;
+
+    EnvironmentMaps m_enviroMaps;
 };
