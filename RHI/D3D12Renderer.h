@@ -49,7 +49,8 @@ public:
     Uploader CreateUploader();
     std::shared_ptr<Texture> CreateTexture(int width, int height, TextureFormat format, TextureType type);
     std::shared_ptr<Sampler> CreateSampler(D3D12_TEXTURE_ADDRESS_MODE addressMode, D3D12_FILTER filter);
-    std::shared_ptr<TextureCube> CreateTextureCube(const std::wstring& filePath);
+    std::shared_ptr<TextureCube> LoadTextureCube(const std::wstring& filePath);
+    std::shared_ptr<TextureCube> CreateTextureCube(uint32_t width, uint32_t height, TextureFormat format);
     std::shared_ptr<CommandList> CreateGraphicsCommandList();
 
     void FlushUploader(Uploader& uploader);

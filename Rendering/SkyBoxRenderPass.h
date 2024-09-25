@@ -14,5 +14,6 @@ private:
     std::shared_ptr<Sampler> m_textureSampler;
     std::shared_ptr<Buffer> m_constantBuffer;
     std::shared_ptr<RenderItem> m_sphereMesh;
-    std::shared_ptr<TextureCube> m_cubeMap;
+    std::shared_ptr<TextureCube> m_skyBox;
+    std::shared_ptr<TextureCube> m_diffuseIrradianceMap;
 };

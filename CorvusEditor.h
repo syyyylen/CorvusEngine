@@ -89,6 +89,4 @@ private:
     bool m_displayUI = true;
 
     ImVec2 m_viewportCachedSize;
-
-    std::shared_ptr<Texture> m_testComputeTex; // TODO remove this
 };

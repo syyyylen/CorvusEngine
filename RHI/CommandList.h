@@ -28,6 +28,7 @@ public:
     void End();
 
     void ImageBarrier(std::shared_ptr<Texture> texture, D3D12_RESOURCE_STATES state);
+    void ImageBarrier(std::shared_ptr<TextureCube> texture, D3D12_RESOURCE_STATES state);
     void ImageBarrier(std::unordered_map<std::shared_ptr<Texture>, D3D12_RESOURCE_STATES> texturesStates);
     void BindRenderTargets(const std::vector<std::shared_ptr<Texture>>& renderTargets, std::shared_ptr<Texture> depthTarget);
     void ClearRenderTarget(std::shared_ptr<Texture> renderTarget, float r, float g, float b, float a);
@@ -41,9 +42,11 @@ public:
     void BindComputePipeline(std::shared_ptr<ComputePipeline> pipeline);
     void BindGraphicsShaderResource(std::shared_ptr<Texture> texture, int idx);
     void BindComputeUnorderedAccessView(std::shared_ptr<Texture> texture, int idx);
+    void BindComputeUnorderedAccessView(std::shared_ptr<TextureCube> texture, int idx, int mip);
+    void BindGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx);
+    void BindComputeShaderResource(std::shared_ptr<TextureCube> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx);
-    void SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx);
     void Draw(int vertexCount, int instanceCount = 1);
     void DrawIndexed(int indexCount, int instanceCount = 1);
     void Dispatch(int x, int y, int z);

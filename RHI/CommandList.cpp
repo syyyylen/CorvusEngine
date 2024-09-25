@@ -67,6 +67,23 @@ void CommandList::ImageBarrier(std::shared_ptr<Texture> texture, D3D12_RESOURCE_
     texture->SetState(state);
 }
 
+void CommandList::ImageBarrier(std::shared_ptr<TextureCube> texture, D3D12_RESOURCE_STATES state)
+{
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = texture->GetResource().Resource;
+    barrier.Transition.StateBefore = texture->GetState();
+    barrier.Transition.StateAfter = state;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    if (barrier.Transition.StateBefore == barrier.Transition.StateAfter)
+        return;
+
+    m_commandList->ResourceBarrier(1, &barrier);
+
+    texture->SetState(state);
+}
+
 void CommandList::ImageBarrier(std::unordered_map<std::shared_ptr<Texture>, D3D12_RESOURCE_STATES> texturesStates)
 {
     std::vector<D3D12_RESOURCE_BARRIER> barriers;
@@ -178,6 +195,21 @@ void CommandList::BindComputeUnorderedAccessView(std::shared_ptr<Texture> textur
     m_commandList->SetComputeRootDescriptorTable(idx, texture->m_srvUav.GPU);
 }
 
+void CommandList::BindComputeUnorderedAccessView(std::shared_ptr<TextureCube> texture, int idx, int mip)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, texture->m_uavs[mip].GPU);
+}
+
+void CommandList::BindGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx)
+{
+    m_commandList->SetGraphicsRootDescriptorTable(idx, texture->m_srv.GPU);
+}
+
+void CommandList::BindComputeShaderResource(std::shared_ptr<TextureCube> texture, int idx)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, texture->m_srv.GPU);
+}
+
 void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
 {
     m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);
@@ -186,11 +218,6 @@ void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
 void CommandList::SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx)
 {
     m_commandList->SetGraphicsRootShaderResourceView(idx, buffer->GetResource().Resource->GetGPUVirtualAddress());
-}
-
-void CommandList::SetGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx)
-{
-    m_commandList->SetGraphicsRootDescriptorTable(idx, texture->m_srv.GPU);
 }
 
 void CommandList::Draw(int vertexCount, int instanceCount)

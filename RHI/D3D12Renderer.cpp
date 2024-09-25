@@ -250,7 +250,7 @@ std::shared_ptr<Sampler> D3D12Renderer::CreateSampler(D3D12_TEXTURE_ADDRESS_MODE
     return std::make_shared<Sampler>(m_device, m_heaps.SamplerHeap, addressMode, filter);
 }
 
-std::shared_ptr<TextureCube> D3D12Renderer::CreateTextureCube(const std::wstring& filePath)
+std::shared_ptr<TextureCube> D3D12Renderer::LoadTextureCube(const std::wstring& filePath)
 {
     auto cmdList = std::make_shared<CommandList>(m_device, m_heaps, D3D12_COMMAND_LIST_TYPE_DIRECT);
     cmdList->Begin();
@@ -262,6 +262,11 @@ std::shared_ptr<TextureCube> D3D12Renderer::CreateTextureCube(const std::wstring
     WaitForGPU();
     
     return TexCube;
+}
+
+std::shared_ptr<TextureCube> D3D12Renderer::CreateTextureCube(uint32_t width, uint32_t height, TextureFormat format)
+{
+    return std::make_shared<TextureCube>(m_device, m_allocator, width, height, format, m_heaps);
 }
 
 std::shared_ptr<CommandList> D3D12Renderer::CreateGraphicsCommandList()
