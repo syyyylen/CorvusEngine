@@ -195,6 +195,7 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindGraphicsShaderResource(globalPassData.IrradianceMap, 6);
     commandList->BindGraphicsShaderResource(globalPassData.PrefilterEnvMap, 7);
+    // commandList->BindGraphicsShaderResource(globalPassData.BRDFLut, 8);
     commandList->Draw(6);
 
     // ------------------------------------------------------------- Lights Volumes --------------------------------------------------------------------

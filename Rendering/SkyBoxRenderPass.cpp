@@ -36,6 +36,8 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
 
     m_enviroMaps.DiffuseIrradianceMap = renderer->CreateTextureCube(128, 128, TextureFormat::RGBA8);
     m_enviroMaps.PrefilterEnvMap = renderer->CreateTextureCube(512, 512, TextureFormat::RGBA8);
+    m_enviroMaps.BRDFLut = renderer->CreateTexture(512, 512, TextureFormat::RG16Float, TextureType::Storage);
+    renderer->CreateUnorderedAccessView(m_enviroMaps.BRDFLut);
 
     Shader irradianceCS;
     ShaderCompiler::CompileShader("Shaders/IrradianceComputeShader.hlsl", ShaderType::Compute, irradianceCS);
@@ -78,6 +80,16 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
         cmdList->Dispatch(mipWidth / 32, mipHeigth / 32, 6);
     }
     cmdList->ImageBarrier(m_enviroMaps.PrefilterEnvMap, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+    Shader brdfCs;
+    ShaderCompiler::CompileShader("Shaders/BRDFComputeShader.hlsl", ShaderType::Compute, brdfCs);
+    auto brdfPipeline = renderer->CreateComputePipeline(brdfCs);
+
+    cmdList->BindComputePipeline(brdfPipeline);
+    cmdList->ImageBarrier(m_enviroMaps.BRDFLut, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    cmdList->BindComputeUnorderedAccessView(m_enviroMaps.BRDFLut, 0);
+    cmdList->Dispatch(512 / 32,  512 / 32, 1);
+    cmdList->ImageBarrier(m_enviroMaps.BRDFLut, D3D12_RESOURCE_STATE_GENERIC_READ);
 
     cmdList->End();
     renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);

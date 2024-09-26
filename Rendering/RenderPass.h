@@ -20,6 +20,7 @@ struct GlobalPassData
     float ViewportSizeY;
     std::shared_ptr<TextureCube> IrradianceMap;
     std::shared_ptr<TextureCube> PrefilterEnvMap;
+    std::shared_ptr<Texture> BRDFLut;
 };
 
 struct RenderMeshData

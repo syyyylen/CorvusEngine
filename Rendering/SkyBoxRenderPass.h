@@ -7,6 +7,7 @@ struct EnvironmentMaps
     std::shared_ptr<TextureCube> SkyBox;
     std::shared_ptr<TextureCube> DiffuseIrradianceMap;
     std::shared_ptr<TextureCube> PrefilterEnvMap;
+    std::shared_ptr<Texture> BRDFLut;
 };
 
 class SkyBoxRenderPass : public RenderPass

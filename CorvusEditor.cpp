@@ -226,6 +226,7 @@ void CorvusEditor::Run()
         passData.ViewportSizeY = m_viewportCachedSize.y;
         passData.IrradianceMap = m_skyboxPass->GetEnvironmentMaps().DiffuseIrradianceMap;
         passData.PrefilterEnvMap = m_skyboxPass->GetEnvironmentMaps().PrefilterEnvMap;
+        passData.BRDFLut = m_skyboxPass->GetEnvironmentMaps().BRDFLut;
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 

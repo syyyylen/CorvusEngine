@@ -25,6 +25,7 @@ Texture2D MetallicRoughness : register(t4);
 Texture2D Depth : register(t5);
 TextureCube Irradiance : register(t6);
 TextureCube PrefilterEnvMap : register(t7);
+// Texture2D BRDFLut : register(t8);
 
 float4 Main(VertexOut Input) : SV_TARGET
 {
@@ -62,11 +63,15 @@ float4 Main(VertexOut Input) : SV_TARGET
 
     float prefilterLOD = roughness * 4;
     float3 prefiltered = PrefilterEnvMap.SampleLevel(Sampler, r, prefilterLOD).rgb;
+    
+    float2 brdvUV = float2(max(dot(normal, view), 0.0), roughness);
+    // float2 envBRDF = BRDFLut.Sample(Sampler, brdvUV).rg;
+    
     float3 specular = prefiltered * (Ks /* * envBRDF.x + envBRDF.y */);
 
     float3 ambiantLight = Kd * diffuse + specular;
 
-    float3 outLight = ambiantLight * DirLightIntensity /* global ambient */ + finalLight;
+    float3 outLight = ambiantLight * DirLightIntensity + finalLight;
 
     switch (Mode)
     {
