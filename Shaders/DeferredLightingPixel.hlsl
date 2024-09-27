@@ -88,7 +88,7 @@ float4 Main(VertexOut Input) : SV_TARGET
     case 5:
         return float4(metallicRoughness, 1.0);
     case 6:
-        return float4(prefiltered, 1.0);
+        return float4(specular, 1.0);
     default:
         return float4(outLight, 1.0);
     }

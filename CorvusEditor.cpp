@@ -58,17 +58,14 @@ CorvusEditor::CorvusEditor()
     AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
             "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
     
-    AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-        "Assets/SciFiHelmet_MetallicRoughness.png", { -9.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-
     AddLightToScene({ -7.5f, 1.0f, 0.0f }, {}, true);
 
     AddModelToScene("DamagedHelmet", "Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg",
-        "Assets/DamagedHelmet_metalRoughness.jpg", { -12.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+        "Assets/DamagedHelmet_metalRoughness.jpg", { -9.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
 
-    AddLightToScene({ -13.5f, 1.0f, 0.0f }, {}, true);
+    AddLightToScene({ -10.5f, 1.0f, 0.0f }, {}, true);
 
-    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -15.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
+    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -12.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
     
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
@@ -253,13 +250,10 @@ void CorvusEditor::Run()
 
         // ------------------------------------------------------------- UI Rendering --------------------------------------------------------------------
         
-        if(m_displayUI)
-        {
-            commandList->BindRenderTargets({ backbuffer }, nullptr);
-            m_renderer->BeginImGuiFrame();
-            RenderUI((float)width, (float)height);
-            m_renderer->EndImGuiFrame();
-        }
+        commandList->BindRenderTargets({ backbuffer }, nullptr);
+        m_renderer->BeginImGuiFrame();
+        RenderUI((float)width, (float)height);
+        m_renderer->EndImGuiFrame();
         
         commandList->ImageBarrier(backbuffer, D3D12_RESOURCE_STATE_PRESENT);
         commandList->End();
@@ -575,7 +569,7 @@ void CorvusEditor::OnKeyUp(int key)
         m_lastMousePos[1] = height/2.0f;
     }
     else if(key == 'R')
-        m_displayUI = !m_displayUI;
+        m_selectedGo.reset();
 }
 
 void CorvusEditor::OnMouseMove(const InputListener::Vec2& mousePosition)

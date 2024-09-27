@@ -88,7 +88,6 @@ private:
     ImGuizmo::OPERATION m_gizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
     int m_viewMode;
-    bool m_displayUI = true;
 
     ImVec2 m_viewportCachedSize;
 };
