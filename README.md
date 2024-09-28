@@ -17,6 +17,7 @@ Features :
 * Instancing
 * Directionnal / Point lights
 * Lights volumes
+* Shadow Maps
 
 RoadMap :
 * CSM
