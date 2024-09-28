@@ -74,3 +74,8 @@ struct PrefilterMapFilterSettings
     float Roughness;
     float Padding[3];
 };
+
+struct ShadowMapConstantBuffer
+{
+    DirectX::XMFLOAT4X4 ViewProj;
+};

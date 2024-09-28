@@ -122,6 +122,11 @@ void CommandList::BindRenderTargets(const std::vector<std::shared_ptr<Texture>>&
     m_commandList->OMSetRenderTargets(rtvDescriptors.size(), rtvDescriptors.data(), false, depthTarget ? &dsvDescriptor : nullptr);
 }
 
+void CommandList::BindDepthTarget(std::shared_ptr<Texture> depthTarget)
+{
+    m_commandList->OMSetRenderTargets(0, nullptr, false, &depthTarget->m_dsv.CPU);
+}
+
 void CommandList::ClearRenderTarget(std::shared_ptr<Texture> renderTarget, float r, float g, float b, float a)
 {
     float clearValues[4] = { r, g, b, a };

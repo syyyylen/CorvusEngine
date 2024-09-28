@@ -10,6 +10,7 @@
 #include "Rendering/DeferredRenderPass.h"
 #include "RHI/D3D12Renderer.h"
 #include "Rendering/RenderPass.h"
+#include "Rendering/ShadowRenderPass.h"
 #include "Rendering/SkyBoxRenderPass.h"
 
 class CorvusEditor : public InputListener
@@ -45,6 +46,7 @@ private:
     std::shared_ptr<Sampler> m_textureSampler;
 
     std::shared_ptr<Texture> m_sceneRenderTexture;
+    std::shared_ptr<ShadowRenderPass> m_shadowRenderPass;
     std::shared_ptr<DeferredRenderPass> m_deferredPass;
     std::shared_ptr<SkyBoxRenderPass> m_skyboxPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
@@ -80,6 +82,7 @@ private:
     float m_testLightQuadraticAttenuation = 0.02f;
     // DirectX::XMFLOAT4 m_testLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+    bool m_enableShadows = true;
     bool m_enableSkyBox = true;
     bool m_enablePointLights = true;
     bool m_movePointLights = false;
