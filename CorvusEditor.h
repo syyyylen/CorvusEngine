@@ -82,6 +82,7 @@ private:
     float m_testLightQuadraticAttenuation = 0.02f;
     // DirectX::XMFLOAT4 m_testLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+    int m_shadowMapResolution = 2048;
     bool m_enableShadows = true;
     bool m_enableSkyBox = true;
     bool m_enablePointLights = false;

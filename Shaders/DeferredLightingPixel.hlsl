@@ -43,7 +43,7 @@ float CalcShadowFactor(float4 shadowPos, float3 normal, float3 lightDir)
     // Depth in NDC space.
     float depth = shadowPos.z;
 
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.002);
 
     uint width, height, numMips;
     ShadowMap.GetDimensions(0, width, height, numMips);
@@ -51,7 +51,6 @@ float CalcShadowFactor(float4 shadowPos, float3 normal, float3 lightDir)
     // Texel size.
     float dx = 1.0f / (float)width;
 
-    float percentLit = 0.0f;
     const float2 offsets[9] =
     {
         float2(-dx,  -dx), float2(0.0f,  -dx), float2(dx,  -dx),
@@ -59,11 +58,11 @@ float CalcShadowFactor(float4 shadowPos, float3 normal, float3 lightDir)
         float2(-dx,  +dx), float2(0.0f,  +dx), float2(dx,  +dx)
     };
 
-    [unroll]
+    float percentLit = 0.0f;
     for(int i = 0; i < 9; ++i)
     {
         float pcf = ShadowMap.SampleCmpLevelZero(CmpSampler, shadowPos.xy + offsets[i], depth).r;
-        percentLit += depth - bias > pcf ? 1.0 : 0.005;
+        percentLit += depth - bias > pcf ? 1.0 : 0.0f;
     }
 
     return 1.0f - (percentLit / 9.0f);

@@ -42,7 +42,7 @@ CorvusEditor::CorvusEditor()
     m_resourceManager = std::make_shared<ResourcesManager>(m_renderer);
 
     m_shadowRenderPass = std::make_shared<ShadowRenderPass>();
-    m_shadowRenderPass->Initialize(m_renderer, 1920 * 2, 1080 * 2); // Shadow Map resolution
+    m_shadowRenderPass->Initialize(m_renderer, m_shadowMapResolution, m_shadowMapResolution);
 
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
@@ -510,7 +510,7 @@ void CorvusEditor::RenderUI(float width, float height)
         if(m_enableShadows)
         {
             ImGui::Begin("Debug Shadow Map");
-            ImGui::Image((ImTextureID)m_shadowRenderPass->GetShadowMap().DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
+            ImGui::Image((ImTextureID)m_shadowRenderPass->GetShadowMap().DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 320));
             ImGui::End();
         }
 
