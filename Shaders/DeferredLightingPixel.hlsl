@@ -32,13 +32,18 @@ TextureCube PrefilterEnvMap : register(t7);
 Texture2D ShadowMap : register(t8);
 SamplerComparisonState CmpSampler : register(s9);
 
-float CalcShadowFactor(float4 shadowPos)
+float CalcShadowFactor(float4 shadowPos, float3 normal, float3 lightDir)
 {
     // Complete projection by doing division by w.
     shadowPos.xyz /= shadowPos.w;
 
+    if(shadowPos.z > 1.0)
+        return 0.0f;
+
     // Depth in NDC space.
     float depth = shadowPos.z;
+
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 
     uint width, height, numMips;
     ShadowMap.GetDimensions(0, width, height, numMips);
@@ -57,10 +62,11 @@ float CalcShadowFactor(float4 shadowPos)
     [unroll]
     for(int i = 0; i < 9; ++i)
     {
-        percentLit += ShadowMap.SampleCmpLevelZero(CmpSampler, shadowPos.xy + offsets[i], depth).r;
+        float pcf = ShadowMap.SampleCmpLevelZero(CmpSampler, shadowPos.xy + offsets[i], depth).r;
+        percentLit += depth - bias > pcf ? 1.0 : 0.005;
     }
-    
-    return percentLit / 9.0f;
+
+    return 1.0f - (percentLit / 9.0f);
 }
 
 float4 Main(VertexOut Input) : SV_TARGET
@@ -80,18 +86,18 @@ float4 Main(VertexOut Input) : SV_TARGET
     float4 worldSpacePosition = mul(clipSpacePosition, InvViewProj);
     worldSpacePosition /= worldSpacePosition.w;
 
-    float shadowFactor = 1.0f;
-    if(ShadowEnabled)
-    {
-        float4 shadowPos = mul(worldSpacePosition, ShadowTransform);
-        shadowFactor =CalcShadowFactor(shadowPos);
-    }
-
     float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
     float3 dirLightVec = normalize(DirLightDirection) * -1.0f; // l (norm vec pointing toward light direction)
 
     float3 view = normalize(CameraPosition - worldSpacePosition.xyz);
     float3 F0 = lerp(Fdielectric, albedo.xyz, metallic);
+
+    float shadowFactor = 1.0f;
+    if(ShadowEnabled)
+    {
+        float4 shadowPos = mul(worldSpacePosition, ShadowTransform);
+        shadowFactor = CalcShadowFactor(shadowPos, normal, dirLightVec);
+    }
     
     float3 finalLight = PBR(F0, normal, view, dirLightVec, normalize(dirLightVec + view), lightColor.xyz, albedo.xyz, roughness, metallic);
 

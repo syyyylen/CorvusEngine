@@ -42,7 +42,7 @@ CorvusEditor::CorvusEditor()
     m_resourceManager = std::make_shared<ResourcesManager>(m_renderer);
 
     m_shadowRenderPass = std::make_shared<ShadowRenderPass>();
-    m_shadowRenderPass->Initialize(m_renderer, 1920, 1080); // Shadow Map resolution
+    m_shadowRenderPass->Initialize(m_renderer, 1920 * 2, 1080 * 2); // Shadow Map resolution
 
     m_deferredPass = std::make_shared<DeferredRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
@@ -73,7 +73,7 @@ CorvusEditor::CorvusEditor()
     AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -16.2f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
 
     AddModelToScene("Cube", "Assets/cube.obj", "", "", "", { -11.0f, -2.25f, 0.0f }, {}, { 12.0f, 0.5f, 6.8f });
-    
+
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
     {
@@ -510,7 +510,7 @@ void CorvusEditor::RenderUI(float width, float height)
         if(m_enableShadows)
         {
             ImGui::Begin("Debug Shadow Map");
-            ImGui::Image((ImTextureID)m_shadowRenderPass->GetShadowMap().DepthBuffer->m_srvUav.GPU.ptr, ImVec2(1920/2, 1080/2));
+            ImGui::Image((ImTextureID)m_shadowRenderPass->GetShadowMap().DepthBuffer->m_srvUav.GPU.ptr, ImVec2(320, 180));
             ImGui::End();
         }
 
