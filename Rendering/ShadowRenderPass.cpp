@@ -23,10 +23,40 @@ void ShadowRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
 
 void ShadowRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget)
 {
-    auto view = camera.GetViewMatrix();
-    auto proj = camera.GetProjMatrix();
+    float sceneBoundsRadius = 20.0f;
+    
+    DirectX::XMVECTOR lightDir = DirectX::XMLoadFloat3(&globalPassData.DirectionalInfo.Direction);
+    DirectX::XMVECTOR lightPos = DirectX::XMVectorScale(lightDir, -2.0f * sceneBoundsRadius);
+    DirectX::XMFLOAT3 worldOrigin = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+    DirectX::XMVECTOR targetPos = DirectX::XMLoadFloat3(&worldOrigin);
+    DirectX::XMVECTOR lightUp = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    DirectX::XMMATRIX lightView = DirectX::XMMatrixLookAtLH(lightPos, targetPos, lightUp);
 
-    DirectX::XMMATRIX viewProj = view * proj;
+    // Transform bounding sphere to light space.
+    DirectX::XMFLOAT3 sphereCenterLS;
+    DirectX::XMStoreFloat3(&sphereCenterLS, XMVector3TransformCoord(targetPos, lightView));
+
+    // Ortho frustum in light space encloses scene.
+    float l = sphereCenterLS.x - sceneBoundsRadius;
+    float b = sphereCenterLS.y - sceneBoundsRadius;
+    float n = sphereCenterLS.z - sceneBoundsRadius;
+    float r = sphereCenterLS.x + sceneBoundsRadius;
+    float t = sphereCenterLS.y + sceneBoundsRadius;
+    float f = sphereCenterLS.z + sceneBoundsRadius;
+
+    DirectX::XMMATRIX lightProj = DirectX::XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+
+    // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+    DirectX::XMMATRIX T(
+        0.5f, 0.0f, 0.0f, 0.0f,
+        0.0f, -0.5f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f);
+
+    DirectX::XMMATRIX S = lightView * lightProj * T;
+    DirectX::XMStoreFloat4x4(&m_shadowTransform, S);
+
+    DirectX::XMMATRIX viewProj = lightView * lightProj;
 
     ShadowMapConstantBuffer cbuf;
     DirectX::XMStoreFloat4x4(&cbuf.ViewProj, viewProj);
