@@ -15,6 +15,14 @@ struct ShadowMap
     std::shared_ptr<Texture> DepthBuffer;
 };
 
+struct GBuffer
+{
+    std::shared_ptr<Texture> AlbedoRenderTarget;
+    std::shared_ptr<Texture> NormalRenderTarget;
+    std::shared_ptr<Texture> MetallicRoughnessRenderTarget;
+    std::shared_ptr<Texture> DepthBuffer;
+};
+
 struct GlobalPassData
 {
     float DeltaTime;
@@ -29,6 +37,7 @@ struct GlobalPassData
     std::shared_ptr<Texture> BRDFLut;
     bool EnableShadows;
     ShadowMap ShadowMap;
+    GBuffer GBuffer;
 };
 
 struct RenderMeshData

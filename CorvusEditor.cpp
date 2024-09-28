@@ -10,7 +10,7 @@
 
 #include "Image.h"
 #include "InputSystem.h"
-#include "Rendering/DeferredRenderPass.h"
+#include "Rendering/LightingRenderPass.h"
 #include "Rendering/ShaderCompiler.h"
 #include "RHI/Buffer.h"
 #include "RHI/Uploader.h"
@@ -44,7 +44,10 @@ CorvusEditor::CorvusEditor()
     m_shadowRenderPass = std::make_shared<ShadowRenderPass>();
     m_shadowRenderPass->Initialize(m_renderer, m_shadowMapResolution, m_shadowMapResolution);
 
-    m_deferredPass = std::make_shared<DeferredRenderPass>();
+    m_GBufferRenderPass = std::make_shared<GBufferRenderPass>();
+    m_GBufferRenderPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+
+    m_deferredPass = std::make_shared<LightingRenderPass>();
     m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     m_skyboxPass = std::make_shared<SkyBoxRenderPass>();
@@ -56,23 +59,34 @@ CorvusEditor::CorvusEditor()
 
     m_scene = std::make_shared<Scene>("DemoScene");
 
+    // ----------------------------------------------- ASSETS DEMO ------------------------------------------------
+    
+    constexpr bool assetsDemo = true;
+    if(assetsDemo)
+    {
+        AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png",
+            "Assets/SciFiHelmet_Normal.png", "Assets/SciFiHelmet_MetallicRoughness.png",
+            { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+    
+        AddLightToScene({ -1.5f, 1.0f, 0.0f }, {}, true);
+
+        AddModelToScene("DamagedHelmet", "Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg",
+            "Assets/DamagedHelmet_normal.jpg", "Assets/DamagedHelmet_metalRoughness.jpg",
+            { -3.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
+
+        AddLightToScene({ -4.5f, 1.0f, 0.0f }, {}, true);
+
+        AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "",
+            { -6.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
+
+        AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "",
+            { -10.2f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
+
+        AddModelToScene("Cube", "Assets/cube.obj", "", "", "",
+            { -5.0f, -2.25f, 0.0f }, {}, { 12.0f, 0.5f, 6.8f });
+    }
+    
     // ----------------------------------------------- POINT LIGHTS DEMO ------------------------------------------------
-    
-    AddModelToScene("SciFiHelmet", "Assets/SciFiHelmet.gltf", "Assets/SciFiHelmet_BaseColor.png", "Assets/SciFiHelmet_Normal.png",
-            "Assets/SciFiHelmet_MetallicRoughness.png", { -6.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-    
-    AddLightToScene({ -7.5f, 1.0f, 0.0f }, {}, true);
-
-    AddModelToScene("DamagedHelmet", "Assets/DamagedHelmet.gltf", "Assets/DamagedHelmet_albedo.jpg", "Assets/DamagedHelmet_normal.jpg",
-        "Assets/DamagedHelmet_metalRoughness.jpg", { -9.0f, 0.0f, 0.0f }, { 90.0f, 0.0f, 0.0f });
-
-    AddLightToScene({ -10.5f, 1.0f, 0.0f }, {}, true);
-
-    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -12.25f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
-
-    AddModelToScene("Dragon", "Assets/dragon.obj", "", "", "", { -16.2f, -0.9f, 0.0f }, {}, { 0.25f, 0.25f, 0.25f });
-
-    AddModelToScene("Cube", "Assets/cube.obj", "", "", "", { -11.0f, -2.25f, 0.0f }, {}, { 12.0f, 0.5f, 6.8f });
 
     constexpr bool pointLightsDemo = false;
     if(pointLightsDemo)
@@ -80,10 +94,11 @@ CorvusEditor::CorvusEditor()
         m_dirLightIntensity = 0.1f;
         m_enableSkyBox = false;
         m_enablePointLights = true;
+        m_enableShadows = false;
         
         constexpr float space = 3.0f;
-        constexpr int row = 16;
-        constexpr int column = 14;
+        constexpr int row = 10;
+        constexpr int column = 10;
     
         // AddModelToScene("Assets/cube.obj", "", "", { space * row/2, -0.5f, space * column/2 }, {}, { 25.0f, 0.2f, 25.0f });
 
@@ -254,12 +269,15 @@ void CorvusEditor::Run()
             m_shadowRenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
             passData.ShadowMap = m_shadowRenderPass->GetShadowMap();
         }
+
+        m_GBufferRenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
+        passData.GBuffer = m_GBufferRenderPass->GetGBuffer();
         
         m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
 
         if(m_enableSkyBox)
         {
-            rtInfo.DepthBuffer = m_deferredPass->GetGBuffer().DepthBuffer;
+            rtInfo.DepthBuffer = m_GBufferRenderPass->GetGBuffer().DepthBuffer;
             m_skyboxPass->Pass(m_renderer, passData, m_camera, {}, rtInfo);
         }
 
@@ -498,7 +516,7 @@ void CorvusEditor::RenderUI(float width, float height)
         }
         ImGui::End();
 
-        auto GBuffer = m_deferredPass->GetGBuffer();
+        auto GBuffer = m_GBufferRenderPass->GetGBuffer();
         
         ImGui::Begin("Debug GBuffer");
         ImGui::Image((ImTextureID)GBuffer.AlbedoRenderTarget->m_srvUav.GPU.ptr, ImVec2(320, 180));
@@ -525,7 +543,8 @@ void CorvusEditor::RenderUI(float width, float height)
             m_sceneRenderTexture = m_renderer->CreateTexture(m_viewportCachedSize.x, m_viewportCachedSize.y, TextureFormat::RGBA8, TextureType::RenderTarget);
             m_renderer->CreateRenderTargetView(m_sceneRenderTexture);
             m_renderer->CreateShaderResourceView(m_sceneRenderTexture);
-            
+
+            m_GBufferRenderPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             m_deferredPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             m_skyboxPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             UpdateProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);

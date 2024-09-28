@@ -7,7 +7,8 @@
 #include "Window.h"
 #include "ECS/Scene.h"
 #include "ImGui/ImGuizmo.h"
-#include "Rendering/DeferredRenderPass.h"
+#include "Rendering/GBufferRenderPass.h"
+#include "Rendering/LightingRenderPass.h"
 #include "RHI/D3D12Renderer.h"
 #include "Rendering/RenderPass.h"
 #include "Rendering/ShadowRenderPass.h"
@@ -46,8 +47,10 @@ private:
     std::shared_ptr<Sampler> m_textureSampler;
 
     std::shared_ptr<Texture> m_sceneRenderTexture;
+    
     std::shared_ptr<ShadowRenderPass> m_shadowRenderPass;
-    std::shared_ptr<DeferredRenderPass> m_deferredPass;
+    std::shared_ptr<GBufferRenderPass> m_GBufferRenderPass;
+    std::shared_ptr<LightingRenderPass> m_deferredPass;
     std::shared_ptr<SkyBoxRenderPass> m_skyboxPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     

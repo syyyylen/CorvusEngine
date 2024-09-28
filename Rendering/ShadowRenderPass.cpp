@@ -23,7 +23,7 @@ void ShadowRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
 
 void ShadowRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalPassData& globalPassData, const Camera& camera, const std::vector<RenderMeshData>& renderMeshesData, RenderTargetInfo renderTarget)
 {
-    float sceneBoundsRadius = 20.0f;
+    float sceneBoundsRadius = 15.0f;
     
     DirectX::XMVECTOR lightDir = DirectX::XMLoadFloat3(&globalPassData.DirectionalInfo.Direction);
     DirectX::XMVECTOR lightPos = DirectX::XMVectorScale(lightDir, -2.0f * sceneBoundsRadius);
