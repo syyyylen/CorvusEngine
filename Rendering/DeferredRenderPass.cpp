@@ -3,6 +3,7 @@
 void DeferredRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
 {
     m_textureSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
+    m_comparisonSampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  D3D12_FILTER_MIN_MAG_MIP_LINEAR);
 
     GraphicsPipelineSpecs geomSpecs;
     geomSpecs.FormatCount = 4;
@@ -101,6 +102,8 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     cbuf.ScreenDimensions[1] = globalPassData.ViewportSizeY;
     DirectX::XMStoreFloat4x4(&cbuf.ViewProj, viewProj);
     DirectX::XMStoreFloat4x4(&cbuf.InvViewProj, invViewProj);
+    cbuf.ShadowTransform = globalPassData.ShadowMap.ShadowTransform;
+    cbuf.ShadowEnabled = globalPassData.EnableShadows;
         
     void* data;
     m_sceneConstantBuffer->Map(0, 0, &data);
@@ -195,6 +198,11 @@ void DeferredRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Glo
     commandList->BindGraphicsShaderResource(m_GBuffer.DepthBuffer, 5);
     commandList->BindGraphicsShaderResource(globalPassData.IrradianceMap, 6);
     commandList->BindGraphicsShaderResource(globalPassData.PrefilterEnvMap, 7);
+    if(globalPassData.EnableShadows)
+    {
+        commandList->BindGraphicsShaderResource(globalPassData.ShadowMap.DepthBuffer, 8);
+        commandList->BindGraphicsSampler(m_comparisonSampler, 9);
+    }
     // commandList->BindGraphicsShaderResource(globalPassData.BRDFLut, 8);
     commandList->Draw(6);
 

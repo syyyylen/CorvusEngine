@@ -79,6 +79,7 @@ CorvusEditor::CorvusEditor()
     {
         m_dirLightIntensity = 0.1f;
         m_enableSkyBox = false;
+        m_enablePointLights = true;
         
         constexpr float space = 3.0f;
         constexpr int row = 16;
@@ -231,6 +232,7 @@ void CorvusEditor::Run()
         passData.IrradianceMap = m_skyboxPass->GetEnvironmentMaps().DiffuseIrradianceMap;
         passData.PrefilterEnvMap = m_skyboxPass->GetEnvironmentMaps().PrefilterEnvMap;
         passData.BRDFLut = m_skyboxPass->GetEnvironmentMaps().BRDFLut;
+        passData.EnableShadows = m_enableShadows;
 
         // ------------------------------------------------------------- Render Passes --------------------------------------------------------------------
 
@@ -248,7 +250,10 @@ void CorvusEditor::Run()
         rtInfo.RenderTexture = m_sceneRenderTexture;
 
         if(m_enableShadows)
+        {
             m_shadowRenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
+            passData.ShadowMap = m_shadowRenderPass->GetShadowMap();
+        }
         
         m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
 

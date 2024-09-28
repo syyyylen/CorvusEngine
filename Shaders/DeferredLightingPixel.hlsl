@@ -16,6 +16,9 @@ cbuffer CBuf : register(b0)
     float DirLightIntensity;
     float3 Padding;
     row_major float4x4 InvViewProj;
+    row_major float4x4 ShadowTransform;
+    bool ShadowEnabled;
+    float3 Padding2;
 };
 
 SamplerState Sampler : register(s1);
@@ -26,6 +29,39 @@ Texture2D Depth : register(t5);
 TextureCube Irradiance : register(t6);
 TextureCube PrefilterEnvMap : register(t7);
 // Texture2D BRDFLut : register(t8);
+Texture2D ShadowMap : register(t8);
+SamplerComparisonState CmpSampler : register(s9);
+
+float CalcShadowFactor(float4 shadowPos)
+{
+    // Complete projection by doing division by w.
+    shadowPos.xyz /= shadowPos.w;
+
+    // Depth in NDC space.
+    float depth = shadowPos.z;
+
+    uint width, height, numMips;
+    ShadowMap.GetDimensions(0, width, height, numMips);
+
+    // Texel size.
+    float dx = 1.0f / (float)width;
+
+    float percentLit = 0.0f;
+    const float2 offsets[9] =
+    {
+        float2(-dx,  -dx), float2(0.0f,  -dx), float2(dx,  -dx),
+        float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
+        float2(-dx,  +dx), float2(0.0f,  +dx), float2(dx,  +dx)
+    };
+
+    [unroll]
+    for(int i = 0; i < 9; ++i)
+    {
+        percentLit += ShadowMap.SampleCmpLevelZero(CmpSampler, shadowPos.xy + offsets[i], depth).r;
+    }
+    
+    return percentLit / 9.0f;
+}
 
 float4 Main(VertexOut Input) : SV_TARGET
 {
@@ -43,6 +79,13 @@ float4 Main(VertexOut Input) : SV_TARGET
 
     float4 worldSpacePosition = mul(clipSpacePosition, InvViewProj);
     worldSpacePosition /= worldSpacePosition.w;
+
+    float shadowFactor = 1.0f;
+    if(ShadowEnabled)
+    {
+        float4 shadowPos = mul(worldSpacePosition, ShadowTransform);
+        shadowFactor =CalcShadowFactor(shadowPos);
+    }
 
     float4 lightColor = float4(1.0, 1.0, 1.0, 1.0) * DirLightIntensity;
     float3 dirLightVec = normalize(DirLightDirection) * -1.0f; // l (norm vec pointing toward light direction)
@@ -71,7 +114,7 @@ float4 Main(VertexOut Input) : SV_TARGET
 
     float3 ambiantLight = Kd * diffuse + specular;
 
-    float3 outLight = ambiantLight * DirLightIntensity + finalLight;
+    float3 outLight = (ambiantLight * DirLightIntensity) + finalLight * shadowFactor;
 
     switch (Mode)
     {
@@ -88,7 +131,7 @@ float4 Main(VertexOut Input) : SV_TARGET
     case 5:
         return float4(metallicRoughness, 1.0);
     case 6:
-        return float4(specular, 1.0);
+        return float4(shadowFactor, shadowFactor, shadowFactor, 1.0);
     default:
         return float4(outLight, 1.0);
     }

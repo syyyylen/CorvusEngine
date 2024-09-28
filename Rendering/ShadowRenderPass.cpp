@@ -54,7 +54,7 @@ void ShadowRenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const Globa
         0.5f, 0.5f, 0.0f, 1.0f);
 
     DirectX::XMMATRIX S = lightView * lightProj * T;
-    DirectX::XMStoreFloat4x4(&m_shadowTransform, S);
+    DirectX::XMStoreFloat4x4(&m_shadowMap.ShadowTransform, S);
 
     DirectX::XMMATRIX viewProj = lightView * lightProj;
 

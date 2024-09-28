@@ -84,7 +84,7 @@ private:
 
     bool m_enableShadows = true;
     bool m_enableSkyBox = true;
-    bool m_enablePointLights = true;
+    bool m_enablePointLights = false;
     bool m_movePointLights = false;
     float m_movePointLightsSpeed = 0.8f;
 

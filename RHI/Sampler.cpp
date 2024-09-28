@@ -8,7 +8,11 @@ Sampler::Sampler(std::shared_ptr<Device> device, std::shared_ptr<DescriptorHeap>
     samplerDesc.AddressW = samplerDesc.AddressV;
     samplerDesc.Filter = filter;
     samplerDesc.MaxAnisotropy = 0;
-    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_EQUAL;
+    samplerDesc.BorderColor[0] = 1.0f;
+    samplerDesc.BorderColor[1] = 1.0f;
+    samplerDesc.BorderColor[2] = 1.0f;
+    samplerDesc.BorderColor[3] = 1.0f;
 
     m_descriptorHandle = samplerHeap->Allocate();
     device->GetDevice()->CreateSampler(&samplerDesc, m_descriptorHandle.CPU);

@@ -38,6 +38,11 @@ struct SceneConstantBuffer
     float Padding;
     // 16 bytes boundary
     DirectX::XMFLOAT4X4 InvViewProj;
+    // 16 bytes boundary
+    DirectX::XMFLOAT4X4 ShadowTransform;
+    // 16 bytes boundary
+    int ShadowEnabled;
+    float Paddin2[3];
 };
 
 struct ObjectConstantBuffer

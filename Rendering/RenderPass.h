@@ -9,6 +9,12 @@ struct DirectionalLightInfo
     float Intensity = 1.0f;
 };
 
+struct ShadowMap
+{
+    DirectX::XMFLOAT4X4 ShadowTransform = {};
+    std::shared_ptr<Texture> DepthBuffer;
+};
+
 struct GlobalPassData
 {
     float DeltaTime;
@@ -21,6 +27,8 @@ struct GlobalPassData
     std::shared_ptr<TextureCube> IrradianceMap;
     std::shared_ptr<TextureCube> PrefilterEnvMap;
     std::shared_ptr<Texture> BRDFLut;
+    bool EnableShadows;
+    ShadowMap ShadowMap;
 };
 
 struct RenderMeshData
