@@ -13,6 +13,7 @@
 #include "Rendering/RenderPass.h"
 #include "Rendering/ShadowRenderPass.h"
 #include "Rendering/SkyBoxRenderPass.h"
+#include "Rendering/SSAORenderPass.h"
 
 class CorvusEditor : public InputListener
 {
@@ -50,7 +51,8 @@ private:
     
     std::shared_ptr<ShadowRenderPass> m_shadowRenderPass;
     std::shared_ptr<GBufferRenderPass> m_GBufferRenderPass;
-    std::shared_ptr<LightingRenderPass> m_deferredPass;
+    std::shared_ptr<SSAORenderPass> m_SSAORenderPass;
+    std::shared_ptr<LightingRenderPass> m_deferredLightingPass;
     std::shared_ptr<SkyBoxRenderPass> m_skyboxPass;
     std::shared_ptr<RenderPass> m_transparencyPass;
     
@@ -87,6 +89,7 @@ private:
 
     int m_shadowMapResolution = 2048;
     bool m_enableShadows = true;
+    bool m_enableSSAO = true;
     bool m_enableSkyBox = true;
     bool m_enablePointLights = false;
     bool m_movePointLights = false;

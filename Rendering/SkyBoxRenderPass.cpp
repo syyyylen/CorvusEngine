@@ -81,6 +81,7 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     }
     cmdList->ImageBarrier(m_enviroMaps.PrefilterEnvMap, D3D12_RESOURCE_STATE_GENERIC_READ);
 
+    /*
     Shader brdfCs;
     ShaderCompiler::CompileShader("Shaders/BRDFComputeShader.hlsl", ShaderType::Compute, brdfCs);
     auto brdfPipeline = renderer->CreateComputePipeline(brdfCs);
@@ -90,6 +91,7 @@ void SkyBoxRenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int w
     cmdList->BindComputeUnorderedAccessView(m_enviroMaps.BRDFLut, 0);
     cmdList->Dispatch(512 / 32,  512 / 32, 1);
     cmdList->ImageBarrier(m_enviroMaps.BRDFLut, D3D12_RESOURCE_STATE_GENERIC_READ);
+    */
 
     cmdList->End();
     renderer->ExecuteCommandBuffers({ cmdList }, D3D12_COMMAND_LIST_TYPE_DIRECT);

@@ -84,3 +84,8 @@ struct ShadowMapConstantBuffer
 {
     DirectX::XMFLOAT4X4 ViewProj;
 };
+
+struct SSAOConstantBuffer
+{
+    float Value = 0.5f;
+};

@@ -47,8 +47,11 @@ CorvusEditor::CorvusEditor()
     m_GBufferRenderPass = std::make_shared<GBufferRenderPass>();
     m_GBufferRenderPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
-    m_deferredPass = std::make_shared<LightingRenderPass>();
-    m_deferredPass->Initialize(m_renderer, defaultWidth, defaultHeight);
+    m_SSAORenderPass = std::make_shared<SSAORenderPass>();
+    m_SSAORenderPass->Initialize(m_renderer, defaultWidth / 2, defaultHeight / 2);
+
+    m_deferredLightingPass = std::make_shared<LightingRenderPass>();
+    m_deferredLightingPass->Initialize(m_renderer, defaultWidth, defaultHeight);
 
     m_skyboxPass = std::make_shared<SkyBoxRenderPass>();
     m_skyboxPass->Initialize(m_renderer, defaultWidth, defaultHeight);
@@ -263,7 +266,7 @@ void CorvusEditor::Run()
 
         RenderTargetInfo rtInfo;
         rtInfo.RenderTexture = m_sceneRenderTexture;
-
+        
         if(m_enableShadows)
         {
             m_shadowRenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
@@ -272,8 +275,11 @@ void CorvusEditor::Run()
 
         m_GBufferRenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
         passData.GBuffer = m_GBufferRenderPass->GetGBuffer();
+
+        if(m_enableSSAO)
+            m_SSAORenderPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
         
-        m_deferredPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
+        m_deferredLightingPass->Pass(m_renderer, passData, m_camera, RMDs, rtInfo);
 
         if(m_enableSkyBox)
         {
@@ -453,6 +459,7 @@ void CorvusEditor::RenderUI(float width, float height)
         ImGui::Separator();
         ImGui::Checkbox("Enable SkyBox", &m_enableSkyBox);
         ImGui::Checkbox("Enable Shadows", &m_enableShadows);
+        ImGui::Checkbox("Enable SSAO", &m_enableSSAO);
         ImGui::End();
 
         ImGui::Begin("Debug Point Lights");
@@ -532,6 +539,13 @@ void CorvusEditor::RenderUI(float width, float height)
             ImGui::End();
         }
 
+        if(m_enableSSAO)
+        {
+            ImGui::Begin("Debug SSAO");
+            ImGui::Image((ImTextureID)m_SSAORenderPass->GetSSAOTexture()->m_srvUav.GPU.ptr, ImVec2(320, 180));
+            ImGui::End();
+        }
+
         ImGui::Begin("Viewport");
         
         auto viewportSize = ImGui::GetContentRegionAvail();
@@ -545,7 +559,8 @@ void CorvusEditor::RenderUI(float width, float height)
             m_renderer->CreateShaderResourceView(m_sceneRenderTexture);
 
             m_GBufferRenderPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
-            m_deferredPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
+            m_SSAORenderPass->OnResize(m_renderer, m_viewportCachedSize.x / 2, m_viewportCachedSize.y / 2);
+            m_deferredLightingPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             m_skyboxPass->OnResize(m_renderer, m_viewportCachedSize.x, m_viewportCachedSize.y);
             UpdateProjMatrix(m_viewportCachedSize.x, m_viewportCachedSize.y);
         }
