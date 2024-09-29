@@ -2,6 +2,8 @@
 
 void SSAORenderPass::Initialize(std::shared_ptr<D3D12Renderer> renderer, int width, int height)
 {
+    m_sampler = renderer->CreateSampler(D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR);
+    
     Shader SSAOShader;
     ShaderCompiler::CompileShader("Shaders/SSAO.hlsl", ShaderType::Compute, SSAOShader);
     m_SSAOPipeline = renderer->CreateComputePipeline(SSAOShader);
@@ -36,7 +38,9 @@ void SSAORenderPass::Pass(std::shared_ptr<D3D12Renderer> renderer, const GlobalP
     commandList->BindComputePipeline(m_SSAOPipeline);
     commandList->ImageBarrier(m_SSAOTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->BindComputeUnorderedAccessView(m_SSAOTexture, 0);
-    commandList->BindComputeConstantBuffer(m_constantBuffer, 1);
+    // commandList->BindComputeConstantBuffer(m_constantBuffer, 1);
+    commandList->BindComputeShaderResource(globalPassData.GBuffer.DepthBuffer, 1);
+    commandList->BindComputeSampler(m_sampler, 2);
     
     commandList->Dispatch(m_width / 32, m_height / 32, 6);
     

@@ -220,6 +220,11 @@ void CommandList::BindComputeShaderResource(std::shared_ptr<TextureCube> texture
     m_commandList->SetComputeRootDescriptorTable(idx, texture->m_srv.GPU);
 }
 
+void CommandList::BindComputeShaderResource(std::shared_ptr<Texture> texture, int idx)
+{
+    m_commandList->SetComputeRootDescriptorTable(idx, texture->m_srvUav.GPU);
+}
+
 void CommandList::BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx)
 {
     m_commandList->SetGraphicsRootDescriptorTable(idx, sampler->GetDescriptorHandle().GPU);

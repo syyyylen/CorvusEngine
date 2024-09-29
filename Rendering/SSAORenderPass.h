@@ -17,4 +17,5 @@ private:
     std::shared_ptr<ComputePipeline> m_SSAOPipeline;
     std::shared_ptr<Texture> m_SSAOTexture;
     std::shared_ptr<Buffer> m_constantBuffer;
+    std::shared_ptr<Sampler> m_sampler;
 };

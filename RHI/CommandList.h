@@ -47,6 +47,7 @@ public:
     void BindComputeUnorderedAccessView(std::shared_ptr<TextureCube> texture, int idx, int mip);
     void BindGraphicsShaderResource(std::shared_ptr<TextureCube> texture, int idx);
     void BindComputeShaderResource(std::shared_ptr<TextureCube> texture, int idx);
+    void BindComputeShaderResource(std::shared_ptr<Texture> texture, int idx);
     void BindGraphicsSampler(std::shared_ptr<Sampler> sampler, int idx);
     void BindComputeSampler(std::shared_ptr<Sampler> sampler, int idx);
     void SetGraphicsShaderResource(std::shared_ptr<Buffer> buffer, int idx);
